@@ -9,12 +9,14 @@ function systemDark(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+// El tema noche es la identidad principal de CALM PATH: es el que se aplica
+// cuando la persona no ha elegido otra cosa (el cambio a claro sigue disponible).
 export function readTheme(): ThemeChoice {
   try {
     const saved = window.localStorage.getItem(THEME_KEY);
-    return saved === 'light' || saved === 'dark' ? saved : 'system';
+    return saved === 'light' || saved === 'dark' ? saved : 'dark';
   } catch {
-    return 'system';
+    return 'dark';
   }
 }
 

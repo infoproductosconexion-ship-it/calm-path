@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import AppShell from './AppShell';
+import Sparks from './Sparks';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -91,8 +92,8 @@ export default function LibraryScreen() {
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {routines.filter((item) => item.featured).map((item) => {
               const Icon = item.icon;
-              return <Link key={item.id} to={item.route} className="group rounded-2xl bg-[#245f51] p-4 transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                <div className="flex items-center justify-between gap-3"><Icon className="h-5 w-5 text-[#CDE9DC]" aria-hidden="true" /><span className="text-sm font-medium text-[#E4F3EB]">{item.duration}</span></div>
+              return <Link key={item.id} to={item.route} className="group rounded-[28px] bg-[#1B4965] p-4 transition-colors hover:bg-[#16425B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                <div className="flex items-center justify-between gap-3"><Icon className="h-5 w-5 text-[#CDE9DC]" aria-hidden="true" /><span className="rounded-full bg-[#16213E] px-3 py-1 text-xs font-semibold text-white">{item.duration}</span></div>
                 <h3 className="mt-4 text-base font-semibold">{item.title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-white">{item.description}</p>
                 <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-white">Open routine <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
@@ -101,13 +102,18 @@ export default function LibraryScreen() {
           </div>
         </section>
 
+        <section aria-labelledby="sparks-heading" className="mb-8">
+          <h2 id="sparks-heading" className="mb-4 font-serif text-xl font-semibold text-[#F4F6FB]">Quick Sparks</h2>
+          <Sparks />
+        </section>
+
         <section aria-labelledby="categories-heading">
           <h2 id="categories-heading" className="font-serif text-xl font-semibold text-[#24332F] dark:text-[#F4F7F3]">Browse by need</h2>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist" aria-label="Practice categories">
             {categories.map((category) => { const Icon = category.icon; const selected = activeCategory === category.id; return <button key={category.id} type="button" role="tab" aria-selected={selected} onClick={() => setActiveCategory(category.id)} className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] ${selected ? 'border-[#2F7D68] bg-[#2F7D68] text-white' : 'border-[#DDE5DF] bg-white text-[#66736D] hover:border-[#2F7D68] dark:border-[#2E423B] dark:bg-[#21302B] dark:text-[#C7D1CC]'}`}><Icon className="h-4 w-4" aria-hidden="true" />{category.label}</button>; })}
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {filtered.map((item) => { const Icon = item.icon; return <Link key={item.id} to={item.route} className="flex min-h-[150px] flex-col rounded-2xl border border-[#DDE5DF] bg-white p-4 shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] dark:border-[#2E423B] dark:bg-[#21302B]"><div className="flex items-center justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2F7D68]/10 text-[#2F7D68] dark:bg-[#8FCBB4]/15 dark:text-[#8FCBB4]"><Icon className="h-5 w-5" aria-hidden="true" /></span><span className="text-sm font-medium text-[#66736D] dark:text-[#A9B7B0]">{item.duration}</span></div><h3 className="mt-4 text-base font-semibold text-[#24332F] dark:text-[#F4F7F3]">{item.title}</h3><p className="mt-1 text-sm leading-relaxed text-[#66736D] dark:text-[#C7D1CC]">{item.description}</p><div className="mt-auto flex items-center justify-between gap-2 pt-4"><span className="flex items-center gap-1 text-sm font-semibold text-[#2F7D68] dark:text-[#8FCBB4]"><PlayCircle className="h-4 w-4" aria-hidden="true" /> Try example</span><button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void toggleFavorite(item); }} className="min-h-[40px] rounded-lg px-2 text-sm font-semibold text-[#2F7D68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] dark:text-[#8FCBB4]">Save</button></div></Link>; })}
+            {filtered.map((item) => { const Icon = item.icon; return <Link key={item.id} to={item.route} className="flex min-h-[150px] flex-col rounded-[28px] border border-[#2C3D63] bg-[#1B2A4A] p-4 shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A441]"><div className="flex items-center justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2F7D68]/10 text-[#2F7D68] dark:bg-[#8FCBB4]/15 dark:text-[#8FCBB4]"><Icon className="h-5 w-5" aria-hidden="true" /></span><span className="rounded-full bg-[#1B4965] px-3 py-1 text-xs font-semibold text-white">{item.duration}</span></div><h3 className="mt-4 text-base font-semibold text-[#24332F] dark:text-[#F4F7F3]">{item.title}</h3><p className="mt-1 text-sm leading-relaxed text-[#66736D] dark:text-[#C7D1CC]">{item.description}</p><div className="mt-auto flex items-center justify-between gap-2 pt-4"><span className="flex items-center gap-1 text-sm font-semibold text-[#2F7D68] dark:text-[#8FCBB4]"><PlayCircle className="h-4 w-4" aria-hidden="true" /> Try example</span><button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void toggleFavorite(item); }} className="min-h-[40px] rounded-lg px-2 text-sm font-semibold text-[#2F7D68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] dark:text-[#8FCBB4]">Save</button></div></Link>; })}
           </div>
         </section>
 

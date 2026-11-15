@@ -26,11 +26,12 @@ const PATH_STEPS: { path: string; label: string; match: (pathname: string) => bo
   { path: '/session', label: 'Session', match: (p) => p.startsWith('/session') },
 ];
 
-const BOTTOM_NAV_ITEMS = [
+const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: HomeIcon, end: true },
   { to: '/check-in', label: 'Check-in', icon: ClipboardList, end: false },
   { to: '/recommendation', label: 'For you', icon: Sparkles, end: false },
   { to: '/library', label: 'Library', icon: LibraryBig, end: false },
+  { to: '/profile', label: 'Profile', icon: UserRound, end: false },
 ];
 
 /** Tracks navigator connectivity and reports it in a calm, consistent way. */
@@ -62,7 +63,7 @@ function BreathingMark() {
       {[0, 1, 2].map((ring) => (
         <motion.span
           key={ring}
-          className="absolute rounded-full border border-[#2F7D68]/35 dark:border-[#8FC6B4]/30"
+          className="absolute rounded-full border border-accent/40"
           style={{ width: `${20 + ring * 8}px`, height: `${20 + ring * 8}px` }}
           animate={
             prefersReducedMotion
@@ -84,7 +85,7 @@ function BreathingMark() {
           }
         />
       ))}
-      <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-[#2F7D68] text-white">
+      <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-ink">
         <Leaf className="h-3.5 w-3.5" strokeWidth={2.25} />
       </span>
     </span>
@@ -111,9 +112,7 @@ function PathProgress({ pathname }: { pathname: string }) {
               <span
                 className={[
                   'h-1.5 flex-1 rounded-full transition-colors duration-200',
-                  isDone || isCurrent
-                    ? 'bg-[#2F7D68]'
-                    : 'bg-[#DDE5DF] dark:bg-[#2A3B35]',
+                  isDone || isCurrent ? 'bg-accent' : 'bg-line',
                 ].join(' ')}
                 aria-hidden="true"
               />
@@ -121,7 +120,7 @@ function PathProgress({ pathname }: { pathname: string }) {
           );
         })}
       </ol>
-      <p className="mt-2 text-xs font-medium text-[#66736D] dark:text-[#9FB0A8]">
+      <p className="mt-2 text-xs font-medium text-muted">
         Step {currentIndex + 1} of {PATH_STEPS.length} · {PATH_STEPS[currentIndex].label}
       </p>
     </div>
@@ -136,7 +135,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DDE5DF] bg-white text-[#24332F] transition-colors hover:bg-[#F7F4EF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F4EF] dark:border-[#2A3B35] dark:bg-[#21302B] dark:text-[#F4F7F3] dark:focus-visible:ring-offset-[#17221F]"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface text-ink transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app"
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
     >
       {isDark ? <Sun className="h-5 w-5" strokeWidth={2} /> : <Moon className="h-5 w-5" strokeWidth={2} />}
@@ -151,9 +150,9 @@ function OfflineBanner() {
   return (
     <div role="status" aria-live="polite" className="mx-auto w-full max-w-3xl px-4">
       {!isOnline && (
-        <div className="mb-4 flex items-center gap-2 rounded-2xl border border-[#B94A48]/30 bg-[#B94A48]/10 px-4 py-3 text-sm font-medium text-[#8a3a38] dark:border-[#e08684]/30 dark:bg-[#B94A48]/15 dark:text-[#f4b9b7]">
-          <WifiOff className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-          <span>Sin conexión. Algunas acciones no están disponibles.</span>
+        <div className="mb-4 flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-4 py-3 text-sm font-medium text-ink">
+          <WifiOff className="h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden="true" />
+          <span>No connection. Some actions are not available right now.</span>
         </div>
       )}
     </div>
@@ -168,36 +167,33 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F7F4EF] font-sans text-[#24332F] antialiased dark:bg-[#17221F] dark:text-[#F4F7F3]">
+    <div className="flex min-h-dvh flex-col bg-app font-sans text-ink antialiased">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#2F7D68] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-[#DDE5DF] bg-[#F7F4EF]/90 backdrop-blur dark:border-[#2A3B35] dark:bg-[#17221F]/90">
+      <header className="sticky top-0 z-30 border-b border-line bg-app/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F4EF] dark:focus-visible:ring-offset-[#17221F]"
+            className="flex items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app"
           >
             <BreathingMark />
             <span className="flex flex-col leading-tight">
-              <span
-                className="text-lg font-bold tracking-tight text-[#24332F] dark:text-[#F4F7F3]"
-                style={{ fontFamily: '"Fraunces", serif' }}
-              >
+              <span className="font-display text-lg font-bold tracking-tight text-ink">
                 Calm Path
               </span>
-              <span className="text-xs font-medium text-[#66736D] dark:text-[#9FB0A8]">
+              <span className="text-xs font-medium text-muted">
                 Gentle steps to feel calmer
               </span>
             </span>
           </Link>
 
-          <nav aria-label="Main navigation" className="hidden items-center gap-1 sm:flex">
-            {BOTTOM_NAV_ITEMS.map((item) => (
+          <nav aria-label="Main navigation" className="hidden items-center gap-1 lg:flex">
+            {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -206,8 +202,8 @@ export default function AppShell({ children }: { children?: ReactNode }) {
                   [
                     'rounded-full px-3 py-2 text-sm font-semibold transition-colors',
                     isActive
-                      ? 'bg-[#2F7D68]/10 text-[#2F7D68] dark:bg-[#2F7D68]/20 dark:text-[#8FC6B4]'
-                      : 'text-[#66736D] hover:bg-[#2F7D68]/5 hover:text-[#24332F] dark:text-[#9FB0A8] dark:hover:bg-white/5 dark:hover:text-[#F4F7F3]',
+                      ? 'bg-accent text-accent-ink'
+                      : 'text-muted hover:bg-surface hover:text-ink',
                   ].join(' ')
                 }
               >
@@ -217,10 +213,6 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link to="/profile" className="inline-flex h-11 items-center gap-2 rounded-full border border-[#DDE5DF] bg-white px-3 text-sm font-semibold text-[#24332F] transition-colors hover:bg-[#F7F4EF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] dark:border-[#2A3B35] dark:bg-[#21302B] dark:text-[#F4F7F3] dark:hover:bg-[#2A3B35]">
-              <UserRound className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Profile</span>
-            </Link>
             <ThemeToggle />
           </div>
         </div>
@@ -238,7 +230,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 pt-2 focus:outline-none sm:pb-12"
+        className="mx-auto w-full max-w-3xl flex-1 px-4 pb-32 pt-2 focus:outline-none lg:pb-14"
       >
         {children ?? <Outlet />}
 
@@ -249,11 +241,10 @@ export default function AppShell({ children }: { children?: ReactNode }) {
 
       <nav
         aria-label="Bottom navigation"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-[#DDE5DF] bg-white/95 backdrop-blur sm:hidden dark:border-[#2A3B35] dark:bg-[#21302B]/95"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-0 bottom-0 z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:hidden"
       >
-        <div className="mx-auto flex max-w-3xl items-stretch justify-around px-2 py-1.5">
-          {BOTTOM_NAV_ITEMS.map((item) => {
+        <div className="mx-auto flex max-w-md items-stretch justify-between gap-1 rounded-[28px] border border-line bg-surface/95 p-1.5 shadow-[0_12px_32px_rgba(8,14,30,0.45)] backdrop-blur">
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -262,10 +253,8 @@ export default function AppShell({ children }: { children?: ReactNode }) {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'flex min-h-[48px] min-w-[72px] flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68]',
-                    isActive
-                      ? 'text-[#2F7D68] dark:text-[#8FC6B4]'
-                      : 'text-[#66736D] dark:text-[#9FB0A8]',
+                    'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-[22px] px-1 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                    isActive ? 'bg-accent text-accent-ink' : 'text-muted hover:text-ink',
                   ].join(' ')
                 }
               >

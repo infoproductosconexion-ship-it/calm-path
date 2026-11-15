@@ -1,14 +1,110 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* =========================================================
+   CALM PATH · sistema visual "noche / calma"
+   Los colores se definen UNA sola vez como roles semánticos y
+   se consumen con utilidades Tailwind:
+   bg-app · bg-surface · bg-elevated · text-ink · text-muted
+   border-line · text-accent · bg-accent · text-accent-ink
+   El tema noche es la identidad principal; el tema claro
+   conserva la misma estructura con papel cálido y petróleo.
+   ========================================================= */
+
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #0f172a;
-  background: #ffffff;
+  /* Tema claro */
+  --app: #f5f2ec;
+  --surface: #ffffff;
+  --surface-2: #ebe5da;
+  --elevated: #16425b;
+  --ink: #16213e;
+  --muted: #5b6579;
+  --line: #ded6c7;
+  --accent: #8a6420;
+  --accent-soft: #f2e4c4;
+  --accent-ink: #16213e;
+  --brand: #16425b;
+  --brand-ink: #eef5f8;
+  --on-image: #f7f9fc;
+  --danger: #a33a22;
+  --danger-soft: #f7e0d8;
+
+  /* Aro de color de los círculos "Sparks" (uno por sesión corta) */
+  --spark-coral: #f2795c;
+  --spark-teal: #2fa7a0;
+  --spark-mustard: #e3b23c;
+  --spark-pink: #e8779a;
+  --spark-lavender: #9b8cd9;
+  --spark-orange: #f2994a;
+}
+
+/* Tema noche — identidad principal de CALM PATH */
+.dark {
+  --app: #16213e;
+  --surface: #1b2a4a;
+  --surface-2: #22345a;
+  --elevated: #1b4965;
+  --ink: #f4f6fb;
+  --muted: #a9b2c9;
+  --line: #2c3d63;
+  --accent: #d9a441;
+  --accent-soft: rgba(217, 164, 65, 0.18);
+  --accent-ink: #16213e;
+  --brand: #1b4965;
+  --brand-ink: #eef5f8;
+  --on-image: #f7f9fc;
+  --danger: #ff9b8a;
+  --danger-soft: rgba(255, 155, 138, 0.16);
+}
+
+@theme inline {
+  --color-app: var(--app);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-elevated: var(--elevated);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-on-image: var(--on-image);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-spark-coral: var(--spark-coral);
+  --color-spark-teal: var(--spark-teal);
+  --color-spark-mustard: var(--spark-mustard);
+  --color-spark-pink: var(--spark-pink);
+  --color-spark-lavender: var(--spark-lavender);
+  --color-spark-orange: var(--spark-orange);
+
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  /* La app ya no usa tipografía serif: font-serif apunta al display. */
+  --font-serif: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--app);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { min-height: 100%; margin: 0; }
+body { background: var(--app); color: var(--ink); }
 button, input, textarea, select { font: inherit; }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

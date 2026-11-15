@@ -161,7 +161,7 @@ export default function CheckInScreen() {
     <AppShell>
       <div className="mx-auto w-full max-w-xl px-4 py-6 sm:py-8">
         <div className="mb-6">
-          <p className="mb-2 text-sm font-semibold text-[#2F7D68] dark:text-[#6fc2a9]">
+          <p className="mb-2 text-sm font-semibold text-accent">
             Step {stepIndex + 1} of {STEPS.length} — {step.title}
           </p>
           <div className="flex gap-2" role="presentation">
@@ -169,20 +169,18 @@ export default function CheckInScreen() {
               <div
                 key={s.key}
                 className={`h-2 flex-1 rounded-full transition-colors duration-200 ${
-                  i <= stepIndex
-                    ? 'bg-[#2F7D68]'
-                    : 'bg-[#DDE5DF] dark:bg-[#2b3a35]'
+                  i <= stepIndex ? 'bg-accent' : 'bg-line'
                 }`}
               />
             ))}
           </div>
         </div>
 
-        <div className="rounded-[20px] bg-white p-5 shadow-sm dark:bg-[#21302B] sm:p-6">
-          <h1 className="font-serif text-xl font-semibold leading-snug text-[#24332F] dark:text-[#F4F7F3] sm:text-2xl">
+        <div className="rounded-[28px] border border-line bg-surface p-6 shadow-sm sm:p-7">
+          <h1 className="font-display text-2xl font-bold leading-snug text-ink sm:text-[28px]">
             {step.title}
           </h1>
-          <p className="mt-1 mb-5 text-base text-[#66736D] dark:text-[#a9b6b0]">
+          <p className="mt-2 mb-6 text-base text-muted">
             {step.subtitle}
           </p>
 
@@ -203,15 +201,15 @@ export default function CheckInScreen() {
                   role="radio"
                   aria-checked={selected}
                   onClick={() => selectOption(step.key, option.id)}
-                  className={`flex min-h-[64px] items-center gap-3 rounded-[20px] border-2 px-4 py-3 text-left text-base font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#21302B] ${
+                  className={`flex min-h-[64px] items-center gap-3 rounded-full border-2 px-5 py-3 text-left text-base font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
                     selected
-                      ? 'scale-[1.02] border-transparent bg-[#2F7D68] text-white shadow-sm'
-                      : 'border-[#DDE5DF] bg-white text-[#24332F] hover:border-[#2F7D68]/50 hover:bg-[#F7F4EF] dark:border-[#33443d] dark:bg-[#1c2a25] dark:text-[#F4F7F3] dark:hover:bg-[#223029]'
+                      ? 'border-transparent bg-accent text-accent-ink shadow-sm'
+                      : 'border-line bg-surface-2 text-ink hover:border-accent/70'
                   }`}
                 >
                   <Icon
                     className={`h-6 w-6 flex-shrink-0 ${
-                      selected ? 'text-white' : 'text-[#2F7D68] dark:text-[#6fc2a9]'
+                      selected ? 'text-accent-ink' : 'text-muted'
                     }`}
                     aria-hidden="true"
                   />
@@ -225,7 +223,7 @@ export default function CheckInScreen() {
             <p
               id={`${step.key}-error`}
               role="alert"
-              className="mt-3 text-sm font-medium text-[#B94A48]"
+              className="mt-4 text-sm font-medium text-danger"
             >
               {errors[step.key]}
             </p>
@@ -236,7 +234,7 @@ export default function CheckInScreen() {
               type="button"
               onClick={handleBack}
               disabled={stepIndex === 0 || isSubmitting}
-              className="flex h-11 items-center gap-1.5 rounded-lg border border-[#DDE5DF] bg-white px-4 text-base font-semibold text-[#24332F] transition-colors duration-200 hover:bg-[#F7F4EF] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#33443d] dark:bg-[#1c2a25] dark:text-[#F4F7F3] dark:hover:bg-[#223029]"
+              className="flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface-2 px-5 text-base font-semibold text-ink transition-colors duration-200 hover:border-accent/70 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back
@@ -245,7 +243,7 @@ export default function CheckInScreen() {
               type="button"
               onClick={handleNext}
               disabled={isSubmitting}
-              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#2F7D68] px-4 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#276a58] disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-full bg-accent px-5 text-base font-bold text-accent-ink transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? (
                 <>

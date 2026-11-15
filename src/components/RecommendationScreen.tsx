@@ -228,18 +228,18 @@ export default function RecommendationScreen() {
       <div className="mx-auto w-full max-w-md px-4 py-6 sm:py-8">
         <Link
           to="/check-in"
-          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2 -ml-2 text-sm font-medium text-[#66736D] transition-colors hover:text-[#2F7D68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] dark:text-[#A9B7B0] dark:hover:text-[#8FCBB4]"
+          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full -ml-3 px-3 text-sm font-medium text-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to check-in
         </Link>
 
         {!hasCheckInData && (
-          <div className="mt-4 rounded-2xl border border-[#DDE5DF] bg-white px-4 py-3 text-sm text-[#66736D] dark:border-[#2E423B] dark:bg-[#21302B] dark:text-[#A9B7B0]">
+          <div className="mt-4 rounded-[24px] border border-line bg-surface px-5 py-4 text-sm text-muted">
             We don't have your check-in answers yet, so here is a general suggestion.{' '}
             <Link
               to="/check-in"
-              className="font-semibold text-[#2F7D68] underline-offset-2 hover:underline dark:text-[#8FCBB4]"
+              className="font-semibold text-accent underline-offset-2 hover:underline"
             >
               Complete the check-in
             </Link>{' '}
@@ -251,7 +251,7 @@ export default function RecommendationScreen() {
           aria-labelledby="recommendation-heading"
           className="mt-6 flex flex-col items-center text-center"
         >
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-[#66736D] dark:text-[#A9B7B0]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">
             Your recommended practice
           </p>
 
@@ -260,7 +260,7 @@ export default function RecommendationScreen() {
             {[0, 1, 2].map((ring) => (
               <motion.span
                 key={ring}
-                className="absolute rounded-full border border-[#2F7D68]/25 dark:border-[#8FCBB4]/25"
+                className="absolute rounded-full border border-accent/40"
                 style={{
                   width: `${100 + ring * 28}px`,
                   height: `${100 + ring * 28}px`,
@@ -281,36 +281,35 @@ export default function RecommendationScreen() {
                 }}
               />
             ))}
-            <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-[#2F7D68] shadow-sm">
-              <CategoryIcon className="h-9 w-9 text-white" aria-hidden="true" />
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-elevated shadow-sm">
+              <CategoryIcon className="h-9 w-9 text-brand-ink" aria-hidden="true" />
             </div>
           </div>
 
-          <span className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-[#2F7D68]/10 px-3 py-1 text-sm font-semibold text-[#2F7D68] dark:bg-[#2F7D68]/20 dark:text-[#8FCBB4]">
+          <span className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-elevated px-4 py-1.5 text-sm font-semibold text-brand-ink">
             <CategoryIcon className="h-4 w-4" aria-hidden="true" />
             {displayedPractice.category}
           </span>
 
           <h1
             id="recommendation-heading"
-            className="mt-3 text-[28px] leading-tight font-bold text-[#24332F] dark:text-[#F4F7F3]"
-            style={{ fontFamily: "'Fraunces', serif" }}
+            className="mt-3 font-display text-[32px] font-extrabold leading-tight text-ink"
           >
             {displayedPractice.title}
           </h1>
 
-          <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#66736D] dark:text-[#A9B7B0]">
+          <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-muted">
             <Clock className="h-4 w-4" aria-hidden="true" />
             {displayedPractice.duration} min
           </span>
 
-          <p className="mt-4 max-w-[42ch] text-base leading-relaxed text-[#24332F] dark:text-[#F4F7F3]">
+          <p className="mt-4 max-w-[42ch] text-base leading-relaxed text-muted">
             {displayedPractice.description}
           </p>
 
-          <div className="mt-6 flex w-full items-start gap-3 rounded-2xl border border-[#DDE5DF] bg-white px-4 py-4 text-left dark:border-[#2E423B] dark:bg-[#21302B]">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#2F7D68] dark:text-[#8FCBB4]" aria-hidden="true" />
-            <p className="text-sm leading-relaxed text-[#24332F] dark:text-[#F4F7F3]">
+          <div className="mt-6 flex w-full items-start gap-3 rounded-[24px] border border-line bg-surface px-5 py-4 text-left">
+            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+            <p className="text-sm leading-relaxed text-ink">
               {buildReason(displayedPractice, checkInState)}
             </p>
           </div>
@@ -320,7 +319,7 @@ export default function RecommendationScreen() {
           <button
             type="button"
             onClick={handleStart}
-            className="min-h-[48px] w-full rounded-lg bg-[#2F7D68] px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#276b58] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2F7D68] dark:focus-visible:ring-offset-[#17221F]"
+            className="min-h-[52px] w-full rounded-full bg-accent px-6 py-3 text-base font-bold text-accent-ink shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app"
           >
             Start this session
           </button>
@@ -328,7 +327,7 @@ export default function RecommendationScreen() {
           <button
             type="button"
             onClick={handleTryAnother}
-            className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-[#66736D] transition-colors hover:text-[#2F7D68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] dark:text-[#A9B7B0] dark:hover:text-[#8FCBB4]"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Try a different suggestion
