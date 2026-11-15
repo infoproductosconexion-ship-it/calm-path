@@ -1,1 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#2f7d68"/><text x="256" y="256" dy="0.35em" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="280" font-weight="700" fill="#ffffff">C</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Calm Path">
+  <!-- Fondo azul medianoche de la marca -->
+  <rect width="512" height="512" rx="112" fill="#1A1536" />
+
+  <!-- Contorno lineal de flor de loto de 8 pétalos (crema, solo líneas) -->
+  <g
+    transform="translate(256 256) scale(5.6) translate(-32 -32)"
+    fill="none"
+    stroke="#F6F0E3"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(45 32 32)" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(90 32 32)" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(135 32 32)" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(180 32 32)" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(225 32 32)" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(270 32 32)" />
+    <path d="M32 17.5 C37 14.5 38 9.5 32 3 C26 9.5 27 14.5 32 17.5 Z" transform="rotate(315 32 32)" />
+  </g>
+
+  <!-- Luna creciente en crema y punto dorado en su interior -->
+  <g transform="translate(256 256) scale(5.6) translate(-32 -32)">
+    <path d="M36.03 20.7 A12 12 0 1 0 36.03 43.3 A11.4 11.4 0 0 1 36.03 20.7 Z" fill="#F6F0E3" />
+    <circle cx="40.5" cy="26" r="2.8" fill="#E3B23C" />
+  </g>
+</svg>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Moon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import BrandMark, { BrandBadge } from './BrandMark';
 import PwaInstallPrompt from './PwaInstallPrompt';
 
 /**
@@ -29,25 +30,6 @@ const STEPS = [
   { title: 'Get one calming practice', description: 'Breathing, meditation or body relaxation.' },
   { title: 'Drift off', description: 'Clear timing, nothing to scroll.' },
 ] as const;
-
-/** Brand mark: a minimal crescent moon with a soft gold dot. */
-function MoonMark({
-  className = 'h-7 w-7',
-  dotClassName = 'right-[5px] top-[4px] h-1.5 w-1.5',
-}: {
-  className?: string;
-  dotClassName?: string;
-}) {
-  return (
-    <span
-      className={`relative inline-flex shrink-0 items-center justify-center ${className}`}
-      aria-hidden="true"
-    >
-      <Moon className="h-full w-full text-[#E6E1FA]" strokeWidth={1.6} />
-      <span className={`absolute rounded-full bg-[#D9A441] ${dotClassName}`} />
-    </span>
-  );
-}
 
 /** Alternates 'in' (4s) and 'out' (6s) forever, matching the ring animation. */
 function useBreathPhase(): 'in' | 'out' {
@@ -108,8 +90,8 @@ function BreathRings() {
         />
       ))}
 
-      <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-[#1B2A4A] shadow-[0_12px_32px_rgba(8,14,30,0.55)] ring-1 ring-[#9B8CD9]/35">
-        <MoonMark className="h-11 w-11" dotClassName="right-[8px] top-[7px] h-2.5 w-2.5" />
+      <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-[#1A1536] shadow-[0_12px_32px_rgba(8,14,30,0.55)] ring-1 ring-[#9B8CD9]/35">
+        <BrandMark className="h-20 w-20" />
       </div>
     </div>
   );
@@ -126,8 +108,8 @@ export default function HomeScreen() {
           aria-hidden="true"
         />
 
-        <header className="relative flex items-center gap-2">
-          <MoonMark className="h-6 w-6" dotClassName="right-[4px] top-[3px] h-1.5 w-1.5" />
+        <header className="relative flex items-center gap-2.5">
+          <BrandBadge className="h-10 w-10" markClassName="h-8 w-8" />
           <span className="text-sm font-semibold tracking-wide text-[#E6E1FA]">Calm Path</span>
         </header>
 

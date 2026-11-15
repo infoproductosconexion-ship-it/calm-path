@@ -15,9 +15,10 @@ React 19 · TypeScript · Vite · Tailwind CSS · PWA
 - `/src/components/HomeScreen.tsx` — Introduces CALM PATH and gives users a direct starting point for answering what they can do now to feel calmer.
 - `/src/components/CheckInScreen.tsx` — Collects a brief non-clinical check-in about the user's current emotional state, energy, and sleep-related need.
 - `/src/components/RecommendationScreen.tsx` — Shows one personalized short practice with its category, duration, reason for the recommendation, and a prominent start button.
-- `/src/components/GuidedSessionScreen.tsx` — Runs the selected breathing, meditation, or relaxation practice with a clear timer, gentle visual pacing, pause and finish controls; the Steady Breath 3-minute pilot adds a guided video background (visual + narration).
+- `/src/components/GuidedSessionScreen.tsx` — Runs the selected breathing, meditation, or relaxation practice with a clear timer, gentle visual pacing, pause and finish controls; the Steady Breath 3-minute pilot adds a guided audio session (narration and music mixed into one track).
 - `/src/components/WellnessDisclaimer.tsx` — Displays the visible safety notice that CALM PATH provides general wellness practices and does not replace medical care or psychotherapy.
 - `/src/components/PwaInstallPrompt.tsx` — Offers an unobtrusive install prompt and offline-friendly notice for using CALM PATH like a mobile app.
+- `/src/components/BrandMark.tsx` — Official logo: crescent moon, gold dot and the eight-petal lotus outline, reused by the header, the home hero and the favicon/PWA icon.
 - `/src/lib/supabase.ts` — Cliente público de Supabase usando las variables inyectadas por Cosmos.
 - `/src/lib/auth.tsx` — Contexto de sesión de Supabase Auth.
 - `/src/components/AuthScreen.tsx` — Registro e inicio de sesión.
@@ -26,7 +27,7 @@ React 19 · TypeScript · Vite · Tailwind CSS · PWA
 
 ## Sesión piloto multimedia (Steady Breath · 3 min)
 
-La sesión piloto de **Steady Breath** de 3 minutos espera el archivo `/public/audio/steady-breath-3min.mp3`, que contiene la narración y la música mezcladas. La pantalla conserva su imagen ambiental de fondo; el audio no empieza automáticamente y se reproduce, pausa o reanuda con el control de la sesión.
+La sesión piloto de **Steady Breath** de 3 minutos usa una pista de audio externa (`steady-breath-3min.mp3`) que ya contiene la narración y la música mezcladas. La pantalla conserva su imagen ambiental de fondo; el audio no empieza automáticamente y se reproduce, pausa o reanuda con el control de la sesión.
 
 Si el archivo de audio no está disponible, aparece un aviso y la práctica puede continuar con las instrucciones en pantalla y la imagen de fondo, sin audio.
 

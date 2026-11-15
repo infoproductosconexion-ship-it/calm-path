@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import PwaInstallPrompt from './PwaInstallPrompt';
+import { BrandBadge } from './BrandMark';
 
 /**
  * Ordered steps of the guided path. Used to render a small progress
@@ -50,16 +51,6 @@ function useOnlineStatus() {
   }, []);
 
   return isOnline;
-}
-
-/** Compact brand mark: crescent moon and a soft gold dot. */
-function BreathingMark() {
-  return (
-    <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center" aria-hidden="true">
-      <Moon className="h-6 w-6 text-[#E6E1FA]" strokeWidth={1.6} />
-      <span className="absolute right-[11px] top-[10px] h-1.5 w-1.5 rounded-full bg-[#D9A441]" />
-    </span>
-  );
 }
 
 /** Small step indicator shown under the header on the guided-path screens. */
@@ -151,7 +142,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
             to="/"
             className="flex items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app"
           >
-            <BreathingMark />
+            <BrandBadge className="h-11 w-11" markClassName="h-8 w-8" />
             <span className="flex flex-col leading-tight">
               <span className="font-display text-lg font-bold tracking-tight text-ink">
                 Calm Path
