@@ -357,9 +357,6 @@ function GuidedSessionScreen() {
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
-          {isSteadyBreathPilot && mediaError && (
-            <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
-          )}
           {isSteadyBreathPilot && !mediaError && (
             <audio
               ref={audioRef}
@@ -371,6 +368,9 @@ function GuidedSessionScreen() {
                 audioRef.current?.pause();
               }}
             />
+          )}
+          {isSteadyBreathPilot && mediaError && (
+            <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-[#14231f]/75 via-[#1b2b27]/35 to-[#14231f]/95" aria-hidden="true" />
           <div className="relative z-10 mx-auto max-w-2xl px-4 py-5 sm:px-8 sm:py-8">
