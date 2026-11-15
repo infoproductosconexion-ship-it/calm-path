@@ -40,16 +40,16 @@
 
 /* Tema noche — identidad principal de CALM PATH */
 .dark {
-  --app: #16213e;
-  --surface: #1b2a4a;
-  --surface-2: #22345a;
+  --app: #141b2e;
+  --surface: #2a2347;
+  --surface-2: #332b55;
   --elevated: #1b4965;
-  --ink: #f4f6fb;
-  --muted: #a9b2c9;
-  --line: #2c3d63;
-  --accent: #d9a441;
-  --accent-soft: rgba(217, 164, 65, 0.18);
-  --accent-ink: #16213e;
+  --ink: #f2ede4;
+  --muted: #a9a6c2;
+  --line: #2e3350;
+  --accent: #c9bff0;
+  --accent-soft: rgba(201, 191, 240, 0.16);
+  --accent-ink: #1e1838;
   --brand: #1b4965;
   --brand-ink: #eef5f8;
   --on-image: #f7f9fc;
@@ -84,6 +84,8 @@
   --font-display: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
   /* Serif de titulares de la portada (font-title). No reemplaza a font-serif. */
   --font-title: "Fraunces", "Iowan Old Style", Georgia, serif;
+  /* Serif de las preguntas del check-in (font-question). */
+  --font-question: "Cormorant Garamond", Georgia, serif;
   /* La app ya no usa tipografía serif: font-serif apunta al display. */
   --font-serif: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
 }

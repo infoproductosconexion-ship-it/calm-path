@@ -1,28 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
+  ArrowLeft,
+  X,
+  Check,
+  Brain,
   Wind,
   Zap,
   Feather,
+  Moon,
+  Clock,
   BatteryLow,
   BatteryMedium,
   BatteryFull,
-  Moon,
-  Clock,
   Sunrise,
   CheckCircle2,
-  Brain,
   BedDouble,
   PauseCircle,
-  ArrowLeft,
-  ArrowRight,
   Loader2,
 } from 'lucide-react';
-import AppShell from './AppShell';
-import WellnessDisclaimer from './WellnessDisclaimer';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
+
+/**
+ * Check-in · focus mode.
+ *
+ * Night theme only (#141B2E), no AppShell chrome: minimal top bar (back,
+ * "n of 5", close), five thin progress segments and full-width option rows.
+ * Selecting an option auto-advances (~500 ms) with a gentle slide/fade.
+ * Question ids, option ids and order are unchanged; only the step-1 title
+ * and subtitle copy were updated per the redesign.
+ */
 
 type LucideIcon = typeof Wind;
 
@@ -42,12 +52,12 @@ interface Step {
 const STEPS: Step[] = [
   {
     key: 'mood',
-    title: 'How are you feeling right now?',
-    subtitle: 'Choose the feeling that is closest to this moment.',
+    title: 'How are you feeling tonight?',
+    subtitle: 'Choose what feels closest.',
     options: [
+      { id: 'racing', label: 'My thoughts are racing', icon: Brain },
       { id: 'anxious', label: 'Anxious or on edge', icon: Wind },
       { id: 'stressed', label: 'Stressed and tense', icon: Zap },
-      { id: 'racing', label: 'My thoughts are racing', icon: Brain },
       { id: 'calm', label: 'Calm, but I want to unwind', icon: Feather },
       { id: 'tired', label: 'Tired and ready for sleep', icon: Moon },
     ],
@@ -100,30 +110,31 @@ const STEPS: Step[] = [
   },
 ];
 
+const AUTO_ADVANCE_MS = 500;
+
 export default function CheckInScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const reduceMotion = useReducedMotion();
   const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const advanceTimer = useRef<number>(0);
 
   const step = STEPS[stepIndex];
   const isLastStep = stepIndex === STEPS.length - 1;
 
-  function selectOption(key: string, value: string) {
-    setAnswers((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: '' }));
-  }
+  useEffect(() => () => window.clearTimeout(advanceTimer.current), []);
 
-  async function handleSubmit() {
+  async function finishCheckIn(finalAnswers: Record<string, string>) {
     setIsSubmitting(true);
     if (user) {
       const { error } = await supabase.from('check_ins').insert({
         user_id: user.id,
-        mood: answers.mood,
-        energy: answers.energy,
-        sleep_need: answers.sleepNeed,
+        mood: finalAnswers.mood,
+        energy: finalAnswers.energy,
+        sleep_need: finalAnswers.sleepNeed,
       });
       if (error) {
         setIsSubmitting(false);
@@ -132,143 +143,148 @@ export default function CheckInScreen() {
       }
     }
     setIsSubmitting(false);
-    toast.success('Check-in complete. Finding a practice for you…');
     navigate('/recommendation', {
-      state: { ...answers, minutes: Number(answers.minutes) },
+      state: { ...finalAnswers, minutes: Number(finalAnswers.minutes) },
     });
   }
 
-  function handleNext() {
-    if (!answers[step.key]) {
-      setErrors((prev) => ({
-        ...prev,
-        [step.key]: 'Please choose one option to continue.',
-      }));
-      return;
-    }
-    if (isLastStep) {
-      void handleSubmit();
-    } else {
-      setStepIndex((i) => i + 1);
-    }
+  function selectOption(key: string, value: string) {
+    if (isSubmitting) return;
+    const next = { ...answers, [key]: value };
+    setAnswers(next);
+    window.clearTimeout(advanceTimer.current);
+    advanceTimer.current = window.setTimeout(() => {
+      if (isLastStep) {
+        void finishCheckIn(next);
+      } else {
+        setDirection(1);
+        setStepIndex((i) => i + 1);
+      }
+    }, AUTO_ADVANCE_MS);
   }
 
   function handleBack() {
-    if (stepIndex > 0) setStepIndex((i) => i - 1);
+    window.clearTimeout(advanceTimer.current);
+    if (stepIndex === 0) {
+      navigate('/');
+    } else {
+      setDirection(-1);
+      setStepIndex((i) => i - 1);
+    }
   }
 
   return (
-    <AppShell>
-      <div className="mx-auto w-full max-w-xl px-4 py-6 sm:py-8">
-        <div className="mb-6">
-          <p className="mb-2 text-sm font-semibold text-accent">
-            Step {stepIndex + 1} of {STEPS.length} — {step.title}
-          </p>
-          <div className="flex gap-2" role="presentation">
-            {STEPS.map((s, i) => (
-              <div
-                key={s.key}
-                className={`h-2 flex-1 rounded-full transition-colors duration-200 ${
-                  i <= stepIndex ? 'bg-accent' : 'bg-line'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+    <div className="flex min-h-dvh flex-col bg-[#141B2E] font-sans text-[#F2EDE4]">
+      {/* Minimal focus top bar */}
+      <header className="mx-auto flex w-full max-w-xl items-center justify-between px-5 pt-5">
+        <button
+          type="button"
+          onClick={handleBack}
+          aria-label={stepIndex === 0 ? 'Back to home' : 'Previous question'}
+          className="flex h-11 w-11 items-center justify-center rounded-full text-[#A9A6C2] transition-colors duration-500 ease-in-out hover:text-[#F2EDE4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9BFF0]"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <p className="text-[11px] font-medium tracking-[0.12em] text-[#A9A6C2]">
+          {stepIndex + 1} of {STEPS.length}
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          aria-label="Close check-in and return home"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-[#A9A6C2] transition-colors duration-500 ease-in-out hover:text-[#F2EDE4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9BFF0]"
+        >
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </header>
 
-        <div className="rounded-[28px] border border-line bg-surface p-6 shadow-sm sm:p-7">
-          <h1 className="font-display text-2xl font-bold leading-snug text-ink sm:text-[28px]">
-            {step.title}
-          </h1>
-          <p className="mt-2 mb-6 text-base text-muted">
-            {step.subtitle}
-          </p>
-
-          <div
-            role="radiogroup"
-            aria-label={step.title}
-            aria-invalid={Boolean(errors[step.key])}
-            aria-describedby={errors[step.key] ? `${step.key}-error` : undefined}
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-          >
-            {step.options.map((option) => {
-              const Icon = option.icon;
-              const selected = answers[step.key] === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => selectOption(step.key, option.id)}
-                  className={`flex min-h-[64px] items-center gap-3 rounded-full border-2 px-5 py-3 text-left text-base font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
-                    selected
-                      ? 'border-transparent bg-accent text-accent-ink shadow-sm'
-                      : 'border-line bg-surface-2 text-ink hover:border-accent/70'
-                  }`}
-                >
-                  <Icon
-                    className={`h-6 w-6 flex-shrink-0 ${
-                      selected ? 'text-accent-ink' : 'text-muted'
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <span className="leading-snug">{option.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {errors[step.key] && (
-            <p
-              id={`${step.key}-error`}
-              role="alert"
-              className="mt-4 text-sm font-medium text-danger"
-            >
-              {errors[step.key]}
-            </p>
-          )}
-
-          <div className="mt-6 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={stepIndex === 0 || isSubmitting}
-              className="flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface-2 px-5 text-base font-semibold text-ink transition-colors duration-200 hover:border-accent/70 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back
-            </button>
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={isSubmitting}
-              className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-full bg-accent px-5 text-base font-bold text-accent-ink transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                  Finding your practice…
-                </>
-              ) : isLastStep ? (
-                <>
-                  Get my recommendation
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </>
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <WellnessDisclaimer />
-        </div>
+      {/* Progress segments */}
+      <div
+        className="mx-auto mt-4 flex w-full max-w-xl gap-1.5 px-5"
+        role="progressbar"
+        aria-label={`Question ${stepIndex + 1} of ${STEPS.length}`}
+        aria-valuemin={1}
+        aria-valuemax={STEPS.length}
+        aria-valuenow={stepIndex + 1}
+      >
+        {STEPS.map((s, i) => (
+          <span
+            key={s.key}
+            className={`h-[3px] flex-1 rounded-full transition-colors duration-500 ease-in-out ${
+              i <= stepIndex ? 'bg-[#C9BFF0]' : 'bg-[#2E3350]'
+            }`}
+            aria-hidden="true"
+          />
+        ))}
       </div>
-    </AppShell>
+
+      {/* Question + options, one step at a time */}
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-5 pb-10">
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <motion.section
+            key={step.key}
+            custom={direction}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24 * direction }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -24 * direction }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.45, ease: 'easeInOut' }}
+            className="mt-10 flex flex-1 flex-col"
+            aria-labelledby="checkin-question"
+          >
+            <h1
+              id="checkin-question"
+              className="font-question text-[32px] font-medium leading-[1.2] text-[#F2EDE4]"
+            >
+              {step.title}
+            </h1>
+            <p className="mt-2 text-sm text-[#A9A6C2]">{step.subtitle}</p>
+
+            <div
+              role="radiogroup"
+              aria-label={step.title}
+              className="mt-8 flex flex-col gap-2.5"
+            >
+              {step.options.map((option) => {
+                const Icon = option.icon;
+                const selected = answers[step.key] === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => selectOption(step.key, option.id)}
+                    className={`flex min-h-[60px] w-full items-center gap-3 rounded-2xl border px-4 py-4 text-left transition-colors duration-500 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9BFF0] ${
+                      selected
+                        ? 'border-[#C9BFF0] bg-[#332B55]'
+                        : 'border-[#2E3350] bg-[#2A2347] hover:border-[#C9BFF0]/50'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-[#C9BFF0]" aria-hidden="true" />
+                    <span className="flex-1 text-[15px] leading-snug text-[#F2EDE4]">
+                      {option.label}
+                    </span>
+                    {selected && (
+                      <Check className="h-5 w-5 shrink-0 text-[#C9BFF0]" aria-hidden="true" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-auto pt-10 text-center text-xs text-[#6F6C8C]">
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Finding your practice…
+                </span>
+              ) : (
+                'Tap an option to continue'
+              )}
+            </p>
+          </motion.section>
+        </AnimatePresence>
+      </main>
+    </div>
   );
 }
