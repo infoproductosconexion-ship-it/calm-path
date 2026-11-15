@@ -6,14 +6,12 @@ import {
   ClipboardList,
   Sparkles,
   LibraryBig,
-  Leaf,
   UserRound,
   Sun,
   Moon,
   WifiOff,
 } from 'lucide-react';
 import { useTheme } from '../lib/theme';
-import WellnessDisclaimer from './WellnessDisclaimer';
 import PwaInstallPrompt from './PwaInstallPrompt';
 
 /**
@@ -54,40 +52,12 @@ function useOnlineStatus() {
   return isOnline;
 }
 
-/** The brand mark: a small cluster of breathing rings behind a leaf glyph. */
+/** Compact brand mark: crescent moon and a soft gold dot. */
 function BreathingMark() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center" aria-hidden="true">
-      {[0, 1, 2].map((ring) => (
-        <motion.span
-          key={ring}
-          className="absolute rounded-full border border-accent/40"
-          style={{ width: `${20 + ring * 8}px`, height: `${20 + ring * 8}px` }}
-          animate={
-            prefersReducedMotion
-              ? undefined
-              : {
-                  scale: [1, 1.18, 1],
-                  opacity: [0.55, 0.15, 0.55],
-                }
-          }
-          transition={
-            prefersReducedMotion
-              ? undefined
-              : {
-                  duration: 4.5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: ring * 0.4,
-                }
-          }
-        />
-      ))}
-      <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-ink">
-        <Leaf className="h-3.5 w-3.5" strokeWidth={2.25} />
-      </span>
+      <Moon className="h-6 w-6 text-[#E6E1FA]" strokeWidth={1.6} />
+      <span className="absolute right-[11px] top-[10px] h-1.5 w-1.5 rounded-full bg-[#D9A441]" />
     </span>
   );
 }
@@ -234,9 +204,6 @@ export default function AppShell({ children }: { children?: ReactNode }) {
       >
         {children ?? <Outlet />}
 
-        <div className="mt-10">
-          <WellnessDisclaimer />
-        </div>
       </main>
 
       <nav
