@@ -31,9 +31,8 @@ interface StoredSession {
 
 const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
-// The pilot video contains its ambient visual, narration, and background music.
-const STEADY_BREATH_VIDEO = '/video/steady-breath-3min.mp4';
-// Fallback only: shown when the guided media cannot be loaded (no audio in that case).
+// The pilot MP3 contains the narration and background music.
+const STEADY_BREATH_AUDIO = '/audio/steady-breath-3min.mp3';
 const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
 const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
 
@@ -153,7 +152,7 @@ function GuidedSessionScreen() {
   const [feeling, setFeeling] = useState<Feeling | null>(null);
   const [savedFavorite, setSavedFavorite] = useState(false);
   const [mediaError, setMediaError] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasSavedRef = useRef(false);
   const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
   const sessionTitle = isSteadyBreathPilot ? 'Steady Breath' : practice?.title;
@@ -241,12 +240,12 @@ function GuidedSessionScreen() {
 
   async function handleStart() {
     if (isSteadyBreathPilot && !mediaError) {
-      const video = videoRef.current;
+      const audio = audioRef.current;
       try {
-        if (video) video.currentTime = 0;
-        await video?.play();
+        if (audio) audio.currentTime = 0;
+        await audio?.play();
       } catch {
-        video?.pause();
+        audio?.pause();
         setMediaError(true);
       }
     }
@@ -254,16 +253,16 @@ function GuidedSessionScreen() {
   }
   async function handlePauseResume() {
     if (status === 'running') {
-      videoRef.current?.pause();
+      audioRef.current?.pause();
       setStatus('paused');
       return;
     }
     if (isSteadyBreathPilot && !mediaError) {
-      const video = videoRef.current;
+      const audio = audioRef.current;
       try {
-        await video?.play();
+        await audio?.play();
       } catch {
-        video?.pause();
+        audio?.pause();
         setMediaError(true);
       }
     }
@@ -271,7 +270,7 @@ function GuidedSessionScreen() {
   }
   function handleExitConfirmed() {
     // Leaving early never counts as completed: nothing is saved.
-    videoRef.current?.pause();
+    audioRef.current?.pause();
     setConfirmingExit(false);
     navigate('/recommendation', { state: returnState });
   }
@@ -301,9 +300,9 @@ function GuidedSessionScreen() {
     toast.success('Saved to favorites.');
   }
   function handleRepeat() {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
     setMediaError(false);
     setStatus('ready');
@@ -314,7 +313,7 @@ function GuidedSessionScreen() {
     hasSavedRef.current = false;
   }
   function handleBackToRecommendation() {
-    videoRef.current?.pause();
+    audioRef.current?.pause();
     navigate('/recommendation', { state: returnState });
   }
 
@@ -329,20 +328,18 @@ function GuidedSessionScreen() {
     <AppShell>
       <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-5xl overflow-hidden rounded-[28px] bg-[#17221F] text-[#F4F7F3] shadow-xl sm:my-5 sm:min-h-[calc(100vh-7rem)]">
         <div className="relative min-h-[calc(100vh-9rem)] overflow-hidden sm:min-h-[calc(100vh-7rem)]">
-          {isSteadyBreathPilot && !mediaError && (
-            <video
-              ref={videoRef}
-              src={STEADY_BREATH_VIDEO}
-              preload="metadata"
-              playsInline
-              muted={false}
-              aria-hidden="true"
-              onError={() => setMediaError(true)}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-          {isSteadyBreathPilot && mediaError && (
-            <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
+          {isSteadyBreathPilot && (
+            <>
+              <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
+              {!mediaError && (
+                <audio
+                  ref={audioRef}
+                  src={STEADY_BREATH_AUDIO}
+                  preload="metadata"
+                  onError={() => setMediaError(true)}
+                />
+              )}
+            </>
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-[#14231f]/75 via-[#1b2b27]/35 to-[#14231f]/95" aria-hidden="true" />
           <div className="relative z-10 mx-auto max-w-2xl px-4 py-5 sm:px-8 sm:py-8">
@@ -379,7 +376,7 @@ function GuidedSessionScreen() {
             {isSteadyBreathPilot && (
               <div className="mt-8 flex min-h-[104px] flex-col items-center justify-center text-center" aria-live="polite">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#F0D9A7]">{status === 'ready' ? STEADY_BREATH_CUES[0] : status === 'paused' ? 'Paused' : STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)]}</p>
-                {mediaError && <p role="alert" className="mt-2 max-w-prose text-sm text-white/90">The guided video could not be loaded. You can continue with the on-screen practice.</p>}
+                {mediaError && <p role="alert" className="mt-2 max-w-prose text-sm text-white/90">The guided audio could not be loaded. You can continue with the on-screen practice.</p>}
               </div>
             )}
 

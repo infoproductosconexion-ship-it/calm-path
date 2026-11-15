@@ -26,9 +26,9 @@ React 19 · TypeScript · Vite · Tailwind CSS · PWA
 
 ## Sesión piloto multimedia (Steady Breath · 3 min)
 
-La sesión piloto de **Steady Breath** de 3 minutos espera un único archivo de video en `/public/video/steady-breath-3min.mp4`, que contiene la imagen ambiental (con un zoom lento) y la narración ya mezclada en su propia pista de audio. La pantalla de práctica usa ese video como fondo, sin iniciarlo automáticamente: se reproduce al pulsar «Start session» y se pausa o reanuda con el control de la sesión.
+La sesión piloto de **Steady Breath** de 3 minutos espera el archivo `/public/audio/steady-breath-3min.mp3`, que contiene la narración y la música mezcladas. La pantalla conserva su imagen ambiental de fondo; el audio no empieza automáticamente y se reproduce, pausa o reanuda con el control de la sesión.
 
-Si el archivo no está disponible, la pantalla muestra la imagen de respaldo estática y un aviso de que el video guiado no se pudo cargar; la práctica continúa solo con las instrucciones en pantalla y sin audio.
+Si el archivo de audio no está disponible, aparece un aviso y la práctica puede continuar con las instrucciones en pantalla y la imagen de fondo, sin audio.
 
 ## Instalación
 
