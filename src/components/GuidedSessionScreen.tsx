@@ -1,0 +1,609 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
+import { toast } from 'sonner';
+import { Play, Pause, Square, ArrowLeft, CheckCircle2, Wind, Moon, Sparkles, Heart, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import AppShell from './AppShell';
+import WellnessDisclaimer from './WellnessDisclaimer';
+import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
+import {
+  PRACTICES,
+  PRACTICE_ALIASES,
+  DURATION_OPTIONS,
+  type GuidedPractice,
+  type PracticeType,
+} from '../lib/practices';
+
+type Practice = GuidedPractice;
+
+const FEELINGS = ['Much calmer', 'A little better', 'About the same', 'More restless', "I'm not sure"] as const;
+
+type Feeling = (typeof FEELINGS)[number];
+
+interface StoredSession {
+  practiceId: string;
+  title: string;
+  durationMinutes: number;
+  feeling: Feeling | null;
+  completedAt: string;
+}
+
+const SESSIONS_KEY = 'calm-path:completed-sessions';
+const FAVORITES_KEY = 'calm-path:favorites';
+// Pilot media files are kept separate so narration can be replaced independently.
+const STEADY_BREATH_VIDEO = '/video/steady-breath-3min.mp4';
+const STEADY_BREATH_AUDIO = '/audio/steady-breath-3min.mp3';
+// Fallback only: shown when the guided media cannot be loaded (no audio in that case).
+const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
+const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveCompletedSession(entry: StoredSession) {
+  try {
+    const list = readJson<StoredSession[]>(SESSIONS_KEY, []);
+    list.unshift(entry);
+    window.localStorage.setItem(SESSIONS_KEY, JSON.stringify(list.slice(0, 100)));
+  } catch {
+    /* storage unavailable; session state still lives in memory */
+  }
+}
+
+function updateLastSessionFeeling(feeling: Feeling) {
+  try {
+    const list = readJson<StoredSession[]>(SESSIONS_KEY, []);
+    if (list.length > 0) {
+      list[0] = { ...list[0], feeling };
+      window.localStorage.setItem(SESSIONS_KEY, JSON.stringify(list));
+    }
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+const typeIcon: Record<PracticeType, ReactNode> = {
+  breathing: <Wind size={18} aria-hidden="true" />,
+  meditation: <Sparkles size={18} aria-hidden="true" />,
+  relaxation: <Moon size={18} aria-hidden="true" />,
+};
+
+function formatTime(totalSeconds: number) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function scaleForLabel(label: string, reduced: boolean) {
+  const l = label.toLowerCase();
+  if (reduced) return 1;
+  if (l.includes('breathe') || l.includes('arrive') || l.includes('pause')) return 1.15;
+  if (l.includes('rest') || l.includes('close') || l.includes('rain') || l.includes('release')) return 0.85;
+  return 1;
+}
+
+type Status = 'ready' | 'running' | 'paused' | 'completed';
+
+interface SessionStep {
+  label: string;
+  text: string;
+  seconds: number;
+}
+
+/** Splits the total session time across the stages so the session never exceeds the selected duration. */
+function distributeSeconds(total: number, count: number): number[] {
+  if (count <= 0) return [];
+  const base = Math.floor(total / count);
+  let remainder = total - base * count;
+  return Array.from({ length: count }, () => {
+    const extra = remainder > 0 ? 1 : 0;
+    remainder -= extra;
+    return base + extra;
+  });
+}
+
+function GuidedSessionScreen() {
+  const { practiceId } = useParams<{ practiceId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = location.state as { checkIn?: unknown; duration?: number; title?: string } | null;
+  const returnState = routeState?.checkIn;
+  const reducedMotion = useReducedMotion();
+  const { user } = useAuth();
+
+  const normalizedId = practiceId ? PRACTICE_ALIASES[practiceId] ?? practiceId : undefined;
+  const practice = useMemo(
+    () => PRACTICES.find((p) => p.id === normalizedId),
+    [normalizedId],
+  );
+
+  const durationMinutes = useMemo(() => {
+    const requested = routeState?.duration;
+    return DURATION_OPTIONS.includes(requested as (typeof DURATION_OPTIONS)[number])
+      ? (requested as number)
+      : 5;
+  }, [routeState]);
+
+  const steps: SessionStep[] = useMemo(() => {
+    if (!practice) return [];
+    const stages = practice.stages[durationMinutes] ?? [];
+    const seconds = distributeSeconds(durationMinutes * 60, stages.length);
+    return stages.map((stage, index) => ({
+      label: stage.label,
+      text: stage.text,
+      seconds: seconds[index] ?? 0,
+    }));
+  }, [practice, durationMinutes]);
+
+  const totalSeconds = useMemo(
+    () => steps.reduce((sum, step) => sum + step.seconds, 0),
+    [steps],
+  );
+
+  const [status, setStatus] = useState<Status>('ready');
+  const [stepIndex, setStepIndex] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
+  const [confirmingExit, setConfirmingExit] = useState(false);
+  const [feeling, setFeeling] = useState<Feeling | null>(null);
+  const [savedFavorite, setSavedFavorite] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasSavedRef = useRef(false);
+  const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
+  const sessionTitle = isSteadyBreathPilot ? 'Steady Breath' : practice?.title;
+
+  const currentStep = steps[stepIndex];
+
+  useEffect(() => {
+    if (status !== 'running' || steps.length === 0) return undefined;
+    const interval = window.setInterval(() => {
+      setSecondsLeft((left) => {
+        if (left <= 1) {
+          window.clearInterval(interval);
+          setStatus('completed');
+          return 0;
+        }
+        return left - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [status, steps.length]);
+
+  useEffect(() => {
+    if (status !== 'running' || !currentStep) return undefined;
+    const elapsedBefore = steps.slice(0, stepIndex).reduce((sum, s) => sum + s.seconds, 0);
+    const stepEndsAt = totalSeconds - elapsedBefore - currentStep.seconds;
+    if (secondsLeft <= stepEndsAt) {
+      setStepIndex((i) => Math.min(i + 1, steps.length - 1));
+      return undefined;
+    }
+    const timeout = window.setTimeout(
+      () => setStepIndex((i) => Math.min(i + 1, steps.length - 1)),
+      (secondsLeft - stepEndsAt) * 1000,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [status, stepIndex, secondsLeft, currentStep, steps, totalSeconds]);
+
+  useEffect(() => {
+    if (status === 'completed' && !hasSavedRef.current && practice) {
+      hasSavedRef.current = true;
+      saveCompletedSession({
+        practiceId: practice.id,
+        title: practice.title,
+        durationMinutes,
+        feeling: null,
+        completedAt: new Date().toISOString(),
+      });
+      toast.success('Session complete. Nice job taking this time for yourself.');
+      if (user) {
+        void supabase.from('session_logs').insert({
+          user_id: user.id,
+          activity_slug: practice.id,
+          activity_title: practice.title,
+          category: practice.type,
+          duration_seconds: totalSeconds,
+          completed: true,
+          started_at: new Date(Date.now() - totalSeconds * 1000).toISOString(),
+          completed_at: new Date().toISOString(),
+        });
+      }
+    }
+  }, [status, practice, durationMinutes, totalSeconds, user]);
+
+  if (!practice) {
+    return (
+      <AppShell>
+        <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-4 px-4 py-12 text-center">
+          <h1 className="font-serif text-2xl font-semibold text-[#24332F]">Practice not found</h1>
+          <p className="text-base text-[#66736D]">
+            We couldn&apos;t find that session. Let&apos;s get you to a practice that fits how you feel right now.
+          </p>
+          <Link
+            to="/recommendation"
+            className="mt-2 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[#2F7D68] px-6 text-base font-semibold text-white transition-colors hover:bg-[#28715c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F7D68] focus-visible:ring-offset-2"
+          >
+            Back to recommendations
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const progressPercent = totalSeconds > 0 ? Math.min(100, Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100)) : 0;
+  const scale = status === 'running' && currentStep ? scaleForLabel(currentStep.label, Boolean(reducedMotion)) : 1;
+  const ringTransition = { duration: reducedMotion ? 0.4 : 4, ease: 'easeInOut' as const };
+
+  async function handleStart() {
+    if (isSteadyBreathPilot && !mediaError) {
+      const video = videoRef.current;
+      const audio = audioRef.current;
+      try {
+        if (video) video.currentTime = 0;
+        if (audio) audio.currentTime = 0;
+        const media = [video, audio].filter((element): element is HTMLMediaElement => Boolean(element));
+        await Promise.all(media.map((element) => element.play()));
+      } catch {
+        video?.pause();
+        audio?.pause();
+        setMediaError(true);
+      }
+    }
+    setStatus('running');
+  }
+  async function handlePauseResume() {
+    if (status === 'running') {
+      videoRef.current?.pause();
+      audioRef.current?.pause();
+      setStatus('paused');
+      return;
+    }
+    if (isSteadyBreathPilot && !mediaError) {
+      const video = videoRef.current;
+      const audio = audioRef.current;
+      try {
+        const media = [video, audio].filter((element): element is HTMLMediaElement => Boolean(element));
+        await Promise.all(media.map((element) => element.play()));
+      } catch {
+        video?.pause();
+        audio?.pause();
+        setMediaError(true);
+      }
+    }
+    setStatus('running');
+  }
+  function handleExitConfirmed() {
+    // Leaving early never counts as completed: nothing is saved.
+    videoRef.current?.pause();
+    audioRef.current?.pause();
+    setConfirmingExit(false);
+    navigate('/recommendation', { state: returnState });
+  }
+  function handleFeeling(next: Feeling) {
+    setFeeling(next);
+    updateLastSessionFeeling(next);
+  }
+  function handleSaveFavorite() {
+    if (!practice) return;
+    if (user) {
+      void supabase.from('favorites').insert({
+        user_id: user.id,
+        activity_slug: practice.id,
+        activity_title: practice.title,
+        category: practice.type,
+      });
+    }
+    try {
+      const list = readJson<string[]>(FAVORITES_KEY, []);
+      if (!list.includes(practice.id)) {
+        window.localStorage.setItem(FAVORITES_KEY, JSON.stringify([...list, practice.id]));
+      }
+    } catch {
+      /* storage unavailable */
+    }
+    setSavedFavorite(true);
+    toast.success('Saved to favorites.');
+  }
+  function handleRepeat() {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setMediaError(false);
+    setStatus('ready');
+    setStepIndex(0);
+    setSecondsLeft(totalSeconds);
+    setFeeling(null);
+    setSavedFavorite(false);
+    hasSavedRef.current = false;
+  }
+  function handleBackToRecommendation() {
+    videoRef.current?.pause();
+    audioRef.current?.pause();
+    navigate('/recommendation', { state: returnState });
+  }
+
+  const pilotStartLabel = mediaError ? 'Start session' : status === 'ready' ? 'Start session' : status === 'running' ? 'Pause' : 'Resume';
+  const pilotStartIcon = status === 'running' ? <Pause size={20} aria-hidden="true" /> : <Play size={20} aria-hidden="true" />;
+  function handlePilotPrimaryControl() {
+    if (status === 'ready') void handleStart();
+    else void handlePauseResume();
+  }
+
+  return (
+    <AppShell>
+      <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-5xl overflow-hidden rounded-[28px] bg-[#17221F] text-[#F4F7F3] shadow-xl sm:my-5 sm:min-h-[calc(100vh-7rem)]">
+        <div className="relative min-h-[calc(100vh-9rem)] overflow-hidden sm:min-h-[calc(100vh-7rem)]">
+          {isSteadyBreathPilot && !mediaError && (
+            <video
+              ref={videoRef}
+              src={STEADY_BREATH_VIDEO}
+              preload="metadata"
+              playsInline
+              muted
+              aria-hidden="true"
+              onError={() => setMediaError(true)}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+          {isSteadyBreathPilot && mediaError && (
+            <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
+          )}
+          {isSteadyBreathPilot && !mediaError && (
+            <audio
+              ref={audioRef}
+              src={STEADY_BREATH_AUDIO}
+              preload="auto"
+              onError={() => {
+                setMediaError(true);
+                videoRef.current?.pause();
+                audioRef.current?.pause();
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#14231f]/75 via-[#1b2b27]/35 to-[#14231f]/95" aria-hidden="true" />
+          <div className="relative z-10 mx-auto max-w-2xl px-4 py-5 sm:px-8 sm:py-8">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => (status === 'running' || status === 'paused' ? setConfirmingExit(true) : handleBackToRecommendation())}
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-2 text-sm font-medium text-[#F4F7F3]/80 transition-colors hover:text-[#8CC7A5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5]"
+            aria-label="Back to recommendation"
+          >
+            <ArrowLeft size={20} aria-hidden="true" />
+            Back
+          </button>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#21302B] px-3 py-1 text-xs font-medium text-[#8CC7A5]">
+            {typeIcon[practice.type]}
+            {practice.type === 'breathing' ? 'Breathing' : practice.type === 'meditation' ? 'Meditation' : 'Relaxation'}
+            <span aria-hidden="true">·</span>
+            {durationMinutes} min
+          </span>
+        </div>
+
+        <div aria-live="polite" className="sr-only">
+          {status === 'running' && currentStep ? `${currentStep.label}. ${isSteadyBreathPilot ? STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)] : currentStep.text} Time remaining ${formatTime(secondsLeft)}.` : status === 'completed' ? 'Session complete.' : ''}
+        </div>
+
+        {status !== 'completed' && (
+          <>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h1 className="font-serif text-2xl font-semibold leading-tight text-white">{sessionTitle}</h1>
+              <span className="inline-flex min-h-9 items-center rounded-full border border-white/35 bg-[#17221F]/45 px-3 text-sm font-semibold text-white">{durationMinutes} min</span>
+            </div>
+            {!isSteadyBreathPilot && <p className="mt-2 text-base leading-relaxed text-white/85">{practice.description}</p>}
+
+            {isSteadyBreathPilot && (
+              <div className="mt-8 flex min-h-[104px] flex-col items-center justify-center text-center" aria-live="polite">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#F0D9A7]">{status === 'ready' ? STEADY_BREATH_CUES[0] : status === 'paused' ? 'Paused' : STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)]}</p>
+                {mediaError && <p role="alert" className="mt-2 max-w-prose text-sm text-white/90">The guided video could not be loaded. You can continue with the on-screen practice.</p>}
+              </div>
+            )}
+
+            {!isSteadyBreathPilot && <div className="relative mx-auto my-8 flex h-64 w-64 items-center justify-center">
+              {[0.55, 0.78, 1].map((factor, idx) => (
+                <motion.div
+                  key={idx}
+                  className="absolute rounded-full border border-[#8CC7A5]/40 bg-[#8CC7A5]/10"
+                  style={{ width: `${factor * 100}%`, height: `${factor * 100}%` }}
+                  animate={{ scale }}
+                  transition={{ ...ringTransition, delay: idx * 0.05 }}
+                />
+              ))}
+              <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                <span className="font-serif text-3xl font-semibold tabular-nums text-[#F4F7F3]">{formatTime(secondsLeft)}</span>
+                <span className="mt-1 text-sm font-medium text-[#8CC7A5]">
+                  {status === 'ready' ? 'Ready when you are' : status === 'paused' ? 'Paused' : currentStep?.label}
+                </span>
+              </div>
+            </div>}
+
+            {isSteadyBreathPilot && <div className="my-5 flex justify-center"><div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white backdrop-blur-sm" aria-hidden="true">{mediaError ? <VolumeX className="h-7 w-7" /> : <Volume2 className="h-7 w-7" />}</div></div>}
+
+            <div className="h-2 w-full overflow-hidden rounded-full bg-white/25" aria-label={`Session progress ${progressPercent}%`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
+              <div
+                className="h-full rounded-full bg-[#8CC7A5] transition-[width] duration-1000 ease-linear"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
+            {status !== 'ready' && currentStep && (
+              <div className="mt-5 rounded-2xl border border-white/25 bg-[#17221F]/65 p-5 text-center backdrop-blur-md" aria-label={`Stage ${stepIndex + 1} of ${steps.length}: ${currentStep.label}`}>
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-[#F0D9A7]">{isSteadyBreathPilot ? STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)] : currentStep.label}</p>
+                  <p className="text-sm font-medium text-white/85">Stage {stepIndex + 1} of {steps.length}</p>
+                </div>
+                {!isSteadyBreathPilot && <p className="mt-3 text-base leading-relaxed text-white">{currentStep.text}</p>}
+              </div>
+            )}
+
+            {practice.id === 'drift-into-sleep' && (
+              <div className="mt-4 rounded-2xl border border-[#8CC7A5]/25 bg-[#21302B] p-4" aria-label="Soft Rain sound therapy placeholder">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[#F4F7F3]">Soft Rain</p>
+                  <span className="rounded-full bg-[#8CC7A5]/15 px-2.5 py-1 text-xs font-medium text-[#8CC7A5]">Audio coming soon</span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-[#F4F7F3]/70">
+                  A calming sound layer to support relaxation and create a steady environment for rest.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col gap-3">
+              {status === 'ready' && (
+                <button
+                  type="button"
+                  onClick={handleStart}
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-[#8CC7A5] px-6 text-base font-semibold text-[#17221F] transition-colors hover:bg-[#7bb996] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17221F]"
+                >
+                  <Play size={20} aria-hidden="true" />
+                  Start session
+                </button>
+              )}
+
+              {isSteadyBreathPilot && status !== 'completed' && (
+                <button
+                  type="button"
+                  onClick={handlePilotPrimaryControl}
+                  aria-label={status === 'running' ? 'Pause session' : status === 'paused' ? 'Resume session' : 'Start session'}
+                  className="inline-flex min-h-[56px] w-full items-center justify-center gap-3 rounded-2xl bg-[#8CC7A5] px-6 text-lg font-semibold text-[#17221F] transition-colors hover:bg-[#7bb996] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17221F]"
+                >
+                  {pilotStartIcon}
+                  {pilotStartLabel}
+                </button>
+              )}
+
+              {(status === 'running' || status === 'paused') && (
+                <div className="flex gap-3">
+                  {!isSteadyBreathPilot && <button
+                    type="button"
+                    onClick={handlePauseResume}
+                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg bg-[#8CC7A5] px-4 text-base font-semibold text-[#17221F] transition-colors hover:bg-[#7bb996] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17221F]"
+                  >
+                    {status === 'running' ? <Pause size={20} aria-hidden="true" /> : <Play size={20} aria-hidden="true" />}
+                    {status === 'running' ? 'Pause' : 'Resume'}
+                  </button>}
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingExit(true)}
+                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg border border-[#F4F7F3]/20 px-4 text-base font-medium text-[#F4F7F3] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5]"
+                  >
+                    <Square size={18} aria-hidden="true" />
+                    End session
+                  </button>
+                </div>
+              )}
+
+              {confirmingExit && (
+                <div className="rounded-2xl border border-[#F4F7F3]/15 bg-[#21302B] p-4">
+                  <p className="text-sm text-[#F4F7F3]/80">End this session early? It won&apos;t count as a completed session.</p>
+                  <div className="mt-3 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingExit(false)}
+                      className="min-h-[44px] flex-1 rounded-lg border border-[#F4F7F3]/20 text-sm font-medium text-[#F4F7F3] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5]"
+                    >
+                      Keep going
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExitConfirmed}
+                      className="min-h-[44px] flex-1 rounded-lg bg-[#B94A48] text-sm font-semibold text-white transition-colors hover:bg-[#a43f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B94A48] focus-visible:ring-offset-2 focus-visible:ring-offset-[#21302B]"
+                    >
+                      End session
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {status === 'completed' && (
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/20 bg-[#17221F]/70 px-6 py-10 text-center shadow-lg backdrop-blur-md">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#8CC7A5]/20">
+              <CheckCircle2 size={32} className="text-[#8CC7A5]" aria-hidden="true" />
+            </div>
+            <h1 className="font-serif text-2xl font-semibold text-[#F4F7F3]">Practice complete</h1>
+            <p className="text-base leading-relaxed text-[#F4F7F3]/80">
+              You made space for yourself today.
+            </p>
+            <p className="text-sm text-[#F4F7F3]/80">
+              {practice.title} · {durationMinutes} min
+            </p>
+
+            <fieldset className="mt-2 w-full text-left">
+              <legend className="mb-2 text-sm font-semibold text-[#F4F7F3]">How do you feel now?</legend>
+              <div className="grid gap-2">
+                {FEELINGS.map((option) => {
+                  const selected = feeling === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => handleFeeling(option)}
+                      className={`flex min-h-[44px] items-center rounded-xl border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5] ${
+                        selected
+                          ? 'border-[#8CC7A5] bg-[#8CC7A5]/15 text-[#F4F7F3]'
+                          : 'border-[#F4F7F3]/15 text-[#F4F7F3]/80 hover:bg-white/5'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="mt-2 flex w-full flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleSaveFavorite}
+                disabled={savedFavorite}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-6 text-base font-semibold text-white transition-colors hover:bg-white/15 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0D9A7]"
+              >
+                <Heart size={18} aria-hidden="true" fill={savedFavorite ? 'currentColor' : 'none'} />
+                {savedFavorite ? 'Saved to favorites' : 'Save to favorites'}
+              </button>
+              <button
+                type="button"
+                onClick={handleRepeat}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-[#D7C79C] px-6 text-base font-semibold text-[#17221F] transition-colors hover:bg-[#e5d8b8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0D9A7] focus-visible:ring-offset-2 focus-visible:ring-offset-[#21302B]"
+              >
+                <RotateCcw size={18} aria-hidden="true" />
+                Repeat this session
+              </button>
+              <button
+                type="button"
+                onClick={handleBackToRecommendation}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[#F4F7F3]/20 px-6 text-base font-medium text-[#F4F7F3] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5]"
+              >
+                Back to recommendation
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8">
+          <WellnessDisclaimer />
+        </div>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default GuidedSessionScreen;
