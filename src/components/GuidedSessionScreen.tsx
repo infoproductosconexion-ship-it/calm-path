@@ -31,9 +31,8 @@ interface StoredSession {
 
 const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
-// Pilot media files are kept separate so narration can be replaced independently.
+// The pilot video contains its ambient visual, narration, and background music.
 const STEADY_BREATH_VIDEO = '/video/steady-breath-3min.mp4';
-const STEADY_BREATH_AUDIO = '/audio/steady-breath-3min.mp3';
 // Fallback only: shown when the guided media cannot be loaded (no audio in that case).
 const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
 const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
@@ -155,7 +154,6 @@ function GuidedSessionScreen() {
   const [savedFavorite, setSavedFavorite] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasSavedRef = useRef(false);
   const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
   const sessionTitle = isSteadyBreathPilot ? 'Steady Breath' : practice?.title;
@@ -244,15 +242,11 @@ function GuidedSessionScreen() {
   async function handleStart() {
     if (isSteadyBreathPilot && !mediaError) {
       const video = videoRef.current;
-      const audio = audioRef.current;
       try {
         if (video) video.currentTime = 0;
-        if (audio) audio.currentTime = 0;
-        const media = [video, audio].filter((element): element is HTMLMediaElement => Boolean(element));
-        await Promise.all(media.map((element) => element.play()));
+        await video?.play();
       } catch {
         video?.pause();
-        audio?.pause();
         setMediaError(true);
       }
     }
@@ -261,19 +255,15 @@ function GuidedSessionScreen() {
   async function handlePauseResume() {
     if (status === 'running') {
       videoRef.current?.pause();
-      audioRef.current?.pause();
       setStatus('paused');
       return;
     }
     if (isSteadyBreathPilot && !mediaError) {
       const video = videoRef.current;
-      const audio = audioRef.current;
       try {
-        const media = [video, audio].filter((element): element is HTMLMediaElement => Boolean(element));
-        await Promise.all(media.map((element) => element.play()));
+        await video?.play();
       } catch {
         video?.pause();
-        audio?.pause();
         setMediaError(true);
       }
     }
@@ -282,7 +272,6 @@ function GuidedSessionScreen() {
   function handleExitConfirmed() {
     // Leaving early never counts as completed: nothing is saved.
     videoRef.current?.pause();
-    audioRef.current?.pause();
     setConfirmingExit(false);
     navigate('/recommendation', { state: returnState });
   }
@@ -316,10 +305,6 @@ function GuidedSessionScreen() {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
     setMediaError(false);
     setStatus('ready');
     setStepIndex(0);
@@ -330,7 +315,6 @@ function GuidedSessionScreen() {
   }
   function handleBackToRecommendation() {
     videoRef.current?.pause();
-    audioRef.current?.pause();
     navigate('/recommendation', { state: returnState });
   }
 
@@ -351,22 +335,10 @@ function GuidedSessionScreen() {
               src={STEADY_BREATH_VIDEO}
               preload="metadata"
               playsInline
-              muted
+              muted={false}
               aria-hidden="true"
               onError={() => setMediaError(true)}
               className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-          {isSteadyBreathPilot && !mediaError && (
-            <audio
-              ref={audioRef}
-              src={STEADY_BREATH_AUDIO}
-              preload="auto"
-              onError={() => {
-                setMediaError(true);
-                videoRef.current?.pause();
-                audioRef.current?.pause();
-              }}
             />
           )}
           {isSteadyBreathPilot && mediaError && (
