@@ -31,8 +31,8 @@ interface StoredSession {
 
 const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
-// The pilot MP3 contains the narration and background music.
-const STEADY_BREATH_AUDIO = '/audio/steady-breath-3min.mp3';
+// External pilot MP3 contains the narration and background music.
+const STEADY_BREATH_AUDIO = 'https://raw.githubusercontent.com/infoproductosconexion-ship-it/calm-path/main/public/audio/steady-breath-3min.mp3';
 const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
 const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
 
@@ -331,14 +331,12 @@ function GuidedSessionScreen() {
           {isSteadyBreathPilot && (
             <>
               <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
-              {!mediaError && (
-                <audio
-                  ref={audioRef}
-                  src={STEADY_BREATH_AUDIO}
-                  preload="metadata"
-                  onError={() => setMediaError(true)}
-                />
-              )}
+              <audio
+                ref={audioRef}
+                src={STEADY_BREATH_AUDIO}
+                preload="metadata"
+                onError={() => setMediaError(true)}
+              />
             </>
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-[#14231f]/75 via-[#1b2b27]/35 to-[#14231f]/95" aria-hidden="true" />
