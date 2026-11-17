@@ -24,11 +24,13 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate('/auth', { replace: true }); return; }
+    const currentUser = user;
     let active = true;
     async function load() {
       setLoading(true); setError('');
       const [profileResult, progressResult, sessionsResult, favoritesResult] = await Promise.all([
-        supabase.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('display_name').eq('id', currentUser.id).maybeSingle(),
+
         supabase.from('user_progress').select('active_days, minutes_practiced, completed_sessions').maybeSingle(),
         supabase.from('session_logs').select('id, activity_title, category, duration_seconds, completed_at').order('completed_at', { ascending: false }).limit(20),
         supabase.from('favorites').select('id, activity_title, activity_slug, category').order('created_at', { ascending: false }),

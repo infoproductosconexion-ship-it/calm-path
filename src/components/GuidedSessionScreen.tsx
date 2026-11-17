@@ -11,11 +11,8 @@ import {
   PRACTICES,
   PRACTICE_ALIASES,
   DURATION_OPTIONS,
-  type GuidedPractice,
   type PracticeType,
 } from '../lib/practices';
-
-type Practice = GuidedPractice;
 
 const FEELINGS = ['Much calmer', 'A little better', 'About the same', 'More restless', "I'm not sure"] as const;
 
@@ -113,6 +110,7 @@ function GuidedSessionScreen() {
   const location = useLocation();
   const routeState = location.state as { checkIn?: unknown; duration?: number; title?: string } | null;
   const returnState = routeState?.checkIn;
+  const isSteadyBreathRoute = practiceId ? (PRACTICE_ALIASES[practiceId] ?? practiceId) === 'steady-breath' : false;
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
 
@@ -124,10 +122,12 @@ function GuidedSessionScreen() {
 
   const durationMinutes = useMemo(() => {
     const requested = routeState?.duration;
-    return DURATION_OPTIONS.includes(requested as (typeof DURATION_OPTIONS)[number])
-      ? (requested as number)
-      : 5;
-  }, [routeState]);
+    if (DURATION_OPTIONS.includes(requested as (typeof DURATION_OPTIONS)[number])) {
+      return requested as number;
+    }
+    // Direct opens of the three-minute Steady Breath link should stay on its pilot session.
+    return isSteadyBreathRoute ? 3 : 5;
+  }, [isSteadyBreathRoute, routeState]);
 
   const steps: SessionStep[] = useMemo(() => {
     if (!practice) return [];
@@ -148,11 +148,23 @@ function GuidedSessionScreen() {
   const [status, setStatus] = useState<Status>('ready');
   const [stepIndex, setStepIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
+  const durationKey = `${normalizedId ?? ''}:${durationMinutes}`;
+  const previousDurationKey = useRef(durationKey);
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [feeling, setFeeling] = useState<Feeling | null>(null);
   const [savedFavorite, setSavedFavorite] = useState(false);
   const hasSavedRef = useRef(false);
   const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
+
+  useEffect(() => {
+    if (previousDurationKey.current === durationKey) return;
+    previousDurationKey.current = durationKey;
+    setStatus('ready');
+    setStepIndex(0);
+    setSecondsLeft(totalSeconds);
+    setConfirmingExit(false);
+    hasSavedRef.current = false;
+  }, [durationKey, totalSeconds]);
   const sessionTitle = isSteadyBreathPilot ? 'Steady Breath' : practice?.title;
 
   const currentStep = steps[stepIndex];
@@ -409,7 +421,7 @@ function GuidedSessionScreen() {
                 </button>
               )}
 
-              {isSteadyBreathPilot && status !== 'completed' && (
+              {isSteadyBreathPilot && (
                 <button
                   type="button"
                   onClick={handlePilotPrimaryControl}

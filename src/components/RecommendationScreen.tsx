@@ -186,7 +186,9 @@ function getAlternativePractice(state: CheckInState | undefined, primary: Practi
   const candidates = ALTERNATIVE_IDS[state?.goal ?? ''] ?? [];
   const alternative = candidates
     .map((id) => PRACTICES.find((practice) => practice.id === id))
-    .find((practice): practice is Practice => Boolean(practice) && practice.id !== primary.id && isSleepCompatible(practice, state));
+    .find((candidate): candidate is Practice =>
+      candidate !== undefined && candidate.id !== primary.id && isSleepCompatible(candidate, state),
+    );
 
   return alternative ? withSelectedDuration(alternative, duration) : primary;
 }
