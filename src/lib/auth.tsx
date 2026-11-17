@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
+  // La vista previa puede mostrar este aviso si falla su mecanismo de actualización.
+
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
@@ -54,7 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   }), [loading, session]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <p role="note" className="mx-auto max-w-2xl px-4 py-3 text-center text-sm text-muted">
+        La app intentó usar una función de actualización que no está disponible, y por eso la página podría quedar en blanco.
+      </p>
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
