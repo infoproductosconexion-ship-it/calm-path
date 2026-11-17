@@ -155,6 +155,7 @@ function GuidedSessionScreen() {
   const [savedFavorite, setSavedFavorite] = useState(false);
   const hasSavedRef = useRef(false);
   const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
+  const pilotAudioStartedRef = useRef(false);
 
   useEffect(() => {
     if (previousDurationKey.current === durationKey) return;
@@ -170,7 +171,7 @@ function GuidedSessionScreen() {
   const currentStep = steps[stepIndex];
 
   useEffect(() => {
-    if (status !== 'running' || steps.length === 0) return undefined;
+    if (!isSteadyBreathPilot || !pilotAudioStartedRef.current || status !== 'running' || steps.length === 0) return undefined;
     const interval = window.setInterval(() => {
       setSecondsLeft((left) => {
         if (left <= 1) {
@@ -182,7 +183,7 @@ function GuidedSessionScreen() {
       });
     }, 1000);
     return () => window.clearInterval(interval);
-  }, [status, steps.length]);
+  }, [status, steps.length, isSteadyBreathPilot]);
 
   useEffect(() => {
     if (status !== 'running' || !currentStep) return undefined;
@@ -251,6 +252,12 @@ function GuidedSessionScreen() {
   function handleStart() {
     setStatus('running');
   }
+
+  function handlePilotAudioPlay() {
+    if (!isSteadyBreathPilot || pilotAudioStartedRef.current) return;
+    pilotAudioStartedRef.current = true;
+    setStatus('running');
+  }
   function handlePauseResume() {
     setStatus(status === 'running' ? 'paused' : 'running');
   }
@@ -285,6 +292,7 @@ function GuidedSessionScreen() {
     toast.success('Saved to favorites.');
   }
   function handleRepeat() {
+    pilotAudioStartedRef.current = false;
     setStatus('ready');
     setStepIndex(0);
     setSecondsLeft(totalSeconds);
@@ -374,6 +382,7 @@ function GuidedSessionScreen() {
                   src={STEADY_BREATH_AUDIO_URL}
                   title="Steady Breath audio player"
                   allow="autoplay"
+                  onLoad={handlePilotAudioPlay}
                   className="h-[200px] w-full rounded-2xl border-0"
                 />
                 <p className="mt-2 text-center text-sm text-white/80">Press play on the player to hear the audio.</p>
