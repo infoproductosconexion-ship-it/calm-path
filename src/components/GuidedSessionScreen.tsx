@@ -31,7 +31,6 @@ const FAVORITES_KEY = 'calm-path:favorites';
 // Pilot audio (narration and music mixed) embedded from Google Drive.
 const STEADY_BREATH_AUDIO_URL = 'https://drive.google.com/file/d/1vX1LIIkqDpw71UAwulmtTFT-NtQczRL7/preview';
 const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
-const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -304,11 +303,9 @@ function GuidedSessionScreen() {
     navigate('/recommendation', { state: returnState });
   }
 
-  const pilotStartLabel = status === 'ready' ? 'Start session' : status === 'running' ? 'Pause' : 'Resume';
-  const pilotStartIcon = status === 'running' ? <Pause size={20} aria-hidden="true" /> : <Play size={20} aria-hidden="true" />;
-  function handlePilotPrimaryControl() {
-    if (status === 'ready') void handleStart();
-    else void handlePauseResume();
+  function handlePilotEndSession() {
+    // Leaving the pilot never counts as completed: nothing is saved.
+    navigate('/library');
   }
 
   return (
@@ -325,7 +322,7 @@ function GuidedSessionScreen() {
         <div className="mb-4 flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => (status === 'running' || status === 'paused' ? setConfirmingExit(true) : handleBackToRecommendation())}
+            onClick={() => (isSteadyBreathPilot ? handlePilotEndSession() : status === 'running' || status === 'paused' ? setConfirmingExit(true) : handleBackToRecommendation())}
             className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-2 text-sm font-medium text-[#F4F7F3]/80 transition-colors hover:text-[#8CC7A5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5]"
             aria-label="Back to recommendation"
           >
@@ -341,7 +338,7 @@ function GuidedSessionScreen() {
         </div>
 
         <div aria-live="polite" className="sr-only">
-          {status === 'running' && currentStep ? `${currentStep.label}. ${isSteadyBreathPilot ? STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)] : currentStep.text} Time remaining ${formatTime(secondsLeft)}.` : status === 'completed' ? 'Session complete.' : ''}
+          {status === 'running' && currentStep ? `${isSteadyBreathPilot ? '' : `${currentStep.label}. ${currentStep.text} `}Time remaining ${formatTime(secondsLeft)}.` : status === 'completed' ? 'Session complete.' : ''}
         </div>
 
         {status !== 'completed' && (
@@ -351,12 +348,6 @@ function GuidedSessionScreen() {
               <span className="inline-flex min-h-9 items-center rounded-full border border-white/35 bg-[#17221F]/45 px-3 text-sm font-semibold text-white">{durationMinutes} min</span>
             </div>
             {!isSteadyBreathPilot && <p className="mt-2 text-base leading-relaxed text-white/85">{practice.description}</p>}
-
-            {isSteadyBreathPilot && (
-              <div className="mt-8 flex min-h-[104px] flex-col items-center justify-center text-center" aria-live="polite">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#F0D9A7]">{status === 'ready' ? STEADY_BREATH_CUES[0] : status === 'paused' ? 'Paused' : STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)]}</p>
-              </div>
-            )}
 
             {!isSteadyBreathPilot && <div className="relative mx-auto my-8 flex h-64 w-64 items-center justify-center">
               {[0.55, 0.78, 1].map((factor, idx) => (
@@ -396,13 +387,13 @@ function GuidedSessionScreen() {
               />
             </div>
 
-            {status !== 'ready' && currentStep && (
+            {status !== 'ready' && currentStep && !isSteadyBreathPilot && (
               <div className="mt-5 rounded-2xl border border-white/25 bg-[#17221F]/65 p-5 text-center backdrop-blur-md" aria-label={`Stage ${stepIndex + 1} of ${steps.length}: ${currentStep.label}`}>
                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-[#F0D9A7]">{isSteadyBreathPilot ? STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)] : currentStep.label}</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-[#F0D9A7]">{currentStep.label}</p>
                   <p className="text-sm font-medium text-white/85">Stage {stepIndex + 1} of {steps.length}</p>
                 </div>
-                {!isSteadyBreathPilot && <p className="mt-3 text-base leading-relaxed text-white">{currentStep.text}</p>}
+                <p className="mt-3 text-base leading-relaxed text-white">{currentStep.text}</p>
               </div>
             )}
 
@@ -433,25 +424,24 @@ function GuidedSessionScreen() {
               {isSteadyBreathPilot && (
                 <button
                   type="button"
-                  onClick={handlePilotPrimaryControl}
-                  aria-label={status === 'running' ? 'Pause session' : status === 'paused' ? 'Resume session' : 'Start session'}
-                  className="inline-flex min-h-[56px] w-full items-center justify-center gap-3 rounded-2xl bg-[#8CC7A5] px-6 text-lg font-semibold text-[#17221F] transition-colors hover:bg-[#7bb996] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17221F]"
+                  onClick={handlePilotEndSession}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-[#F4F7F3]/30 bg-[#17221F]/45 px-4 text-base font-medium text-[#F4F7F3] transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5]"
                 >
-                  {pilotStartIcon}
-                  {pilotStartLabel}
+                  <Square size={18} aria-hidden="true" />
+                  End session
                 </button>
               )}
 
-              {(status === 'running' || status === 'paused') && (
+              {(status === 'running' || status === 'paused') && !isSteadyBreathPilot && (
                 <div className="flex gap-3">
-                  {!isSteadyBreathPilot && <button
+                  <button
                     type="button"
                     onClick={handlePauseResume}
                     className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg bg-[#8CC7A5] px-4 text-base font-semibold text-[#17221F] transition-colors hover:bg-[#7bb996] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC7A5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17221F]"
                   >
                     {status === 'running' ? <Pause size={20} aria-hidden="true" /> : <Play size={20} aria-hidden="true" />}
                     {status === 'running' ? 'Pause' : 'Resume'}
-                  </button>}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setConfirmingExit(true)}
@@ -463,7 +453,7 @@ function GuidedSessionScreen() {
                 </div>
               )}
 
-              {confirmingExit && (
+              {confirmingExit && !isSteadyBreathPilot && (
                 <div className="rounded-2xl border border-[#F4F7F3]/15 bg-[#21302B] p-4">
                   <p className="text-sm text-[#F4F7F3]/80">End this session early? It won&apos;t count as a completed session.</p>
                   <div className="mt-3 flex gap-3">
