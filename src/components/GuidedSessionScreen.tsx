@@ -31,8 +31,8 @@ interface StoredSession {
 
 const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
-// Pilot audio (narration and music mixed) hosted on Google Drive.
-const STEADY_BREATH_AUDIO_URL = 'https://drive.google.com/uc?export=download&id=1vX1LIIkqDpw71UAwulmtTFT-NtQczRL7';
+// Pilot audio (narration and music mixed) embedded from Google Drive.
+const STEADY_BREATH_AUDIO_URL = 'https://drive.google.com/file/d/1vX1LIIkqDpw71UAwulmtTFT-NtQczRL7/preview';
 const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
 const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
 
@@ -151,8 +151,6 @@ function GuidedSessionScreen() {
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [feeling, setFeeling] = useState<Feeling | null>(null);
   const [savedFavorite, setSavedFavorite] = useState(false);
-  const [audioError, setAudioError] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasSavedRef = useRef(false);
   const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
   const sessionTitle = isSteadyBreathPilot ? 'Steady Breath' : practice?.title;
@@ -238,36 +236,10 @@ function GuidedSessionScreen() {
   const scale = status === 'running' && currentStep ? scaleForLabel(currentStep.label, Boolean(reducedMotion)) : 1;
   const ringTransition = { duration: reducedMotion ? 0.4 : 4, ease: 'easeInOut' as const };
 
-  async function handleStart() {
-    if (isSteadyBreathPilot) {
-      const audio = audioRef.current;
-      if (!audio) return;
-      setAudioError(false);
-      try {
-        await audio.play();
-      } catch {
-        setAudioError(true);
-        toast.error('Audio is not available yet. Please check the connection and try again.');
-        return;
-      }
-    }
+  function handleStart() {
     setStatus('running');
   }
-  async function handlePauseResume() {
-    if (isSteadyBreathPilot) {
-      const audio = audioRef.current;
-      if (!audio) return;
-      if (status === 'running') audio.pause();
-      else {
-        try {
-          await audio.play();
-        } catch {
-          setAudioError(true);
-          toast.error('Audio is not available yet. Please check the connection and try again.');
-          return;
-        }
-      }
-    }
+  function handlePauseResume() {
     setStatus(status === 'running' ? 'paused' : 'running');
   }
   function handleExitConfirmed() {
@@ -301,11 +273,6 @@ function GuidedSessionScreen() {
     toast.success('Saved to favorites.');
   }
   function handleRepeat() {
-    if (isSteadyBreathPilot && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setAudioError(false);
     setStatus('ready');
     setStepIndex(0);
     setSecondsLeft(totalSeconds);
@@ -391,19 +358,13 @@ function GuidedSessionScreen() {
 
             {isSteadyBreathPilot && (
               <div className="my-5">
-                <audio
-                  ref={audioRef}
+                <iframe
                   src={STEADY_BREATH_AUDIO_URL}
-                  preload="none"
-                  onEnded={() => setStatus('completed')}
-                  onError={() => {
-                    setAudioError(true);
-                    setStatus('paused');
-                    toast.error('Audio is not available yet. Check the connection and try again.');
-                  }}
-                  className="sr-only"
+                  title="Steady Breath audio player"
+                  allow="autoplay"
+                  className="h-[200px] w-full rounded-2xl border-0"
                 />
-                {audioError && <p role="status" className="mb-3 text-center text-sm text-white/85">Audio is not available yet. Please check the connection and try again.</p>}
+                <p className="mt-2 text-center text-sm text-white/80">Press play on the player to hear the audio.</p>
               </div>
             )}
 
@@ -437,7 +398,7 @@ function GuidedSessionScreen() {
             )}
 
             <div className="mt-8 flex flex-col gap-3">
-              {status === 'ready' && (
+              {status === 'ready' && !isSteadyBreathPilot && (
                 <button
                   type="button"
                   onClick={handleStart}
