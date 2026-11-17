@@ -27,9 +27,9 @@ React 19 · TypeScript · Vite · Tailwind CSS · PWA
 
 ## Sesión piloto multimedia (Steady Breath · 3 min)
 
-La sesión piloto de **Steady Breath** de 3 minutos usa una pista de audio externa (`steady-breath-3min.mp3`) que ya contiene la narración y la música mezcladas. La pantalla conserva su imagen ambiental de fondo; el audio no empieza automáticamente y se reproduce, pausa o reanuda con el control de la sesión.
+La sesión piloto de **Steady Breath** de 3 minutos muestra el reproductor incrustado de Google Drive con la pista de audio (narración y música mezcladas). El reproductor aparece al pulsar «Start session»; la pantalla conserva su imagen ambiental de fondo.
 
-Si el archivo de audio no está disponible, aparece un aviso y la práctica puede continuar con las instrucciones en pantalla y la imagen de fondo, sin audio.
+Google Drive no permite controlar su reproductor desde la app: el navegador puede exigir pulsar play dentro del reproductor, y la pausa de la sesión no pausa el audio.
 
 ## Instalación
 

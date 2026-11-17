@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Play, Pause, Square, ArrowLeft, CheckCircle2, Wind, Moon, Sparkles, Heart, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Square, ArrowLeft, CheckCircle2, Wind, Moon, Sparkles, Heart, RotateCcw } from 'lucide-react';
 import AppShell from './AppShell';
 import WellnessDisclaimer from './WellnessDisclaimer';
 import { useAuth } from '../lib/auth';
@@ -31,8 +31,8 @@ interface StoredSession {
 
 const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
-// External pilot MP3 contains the narration and background music.
-const STEADY_BREATH_AUDIO = 'https://raw.githubusercontent.com/infoproductosconexion-ship-it/calm-path/main/public/audio/steady-breath-3min.mp3';
+// Pilot audio (narration and music mixed) hosted on Google Drive, shown with Drive's embedded player.
+const STEADY_BREATH_DRIVE_EMBED = 'https://drive.google.com/file/d/1vX1LIIkqDpw71UAwulmtTFT-NtQczRL7/preview';
 const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
 const STEADY_BREATH_CUES = ['Ready when you are', 'Arrive', 'Notice your breath', 'Inhale gently', 'Exhale slowly', 'Keep it comfortable', 'Let the breath be easy', 'Return to the next breath', 'Notice how you feel'];
 
@@ -151,8 +151,6 @@ function GuidedSessionScreen() {
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [feeling, setFeeling] = useState<Feeling | null>(null);
   const [savedFavorite, setSavedFavorite] = useState(false);
-  const [mediaError, setMediaError] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasSavedRef = useRef(false);
   const isSteadyBreathPilot = practice?.id === 'steady-breath' && durationMinutes === 3;
   const sessionTitle = isSteadyBreathPilot ? 'Steady Breath' : practice?.title;
@@ -238,39 +236,15 @@ function GuidedSessionScreen() {
   const scale = status === 'running' && currentStep ? scaleForLabel(currentStep.label, Boolean(reducedMotion)) : 1;
   const ringTransition = { duration: reducedMotion ? 0.4 : 4, ease: 'easeInOut' as const };
 
-  async function handleStart() {
-    if (isSteadyBreathPilot && !mediaError) {
-      const audio = audioRef.current;
-      try {
-        if (audio) audio.currentTime = 0;
-        await audio?.play();
-      } catch {
-        audio?.pause();
-        setMediaError(true);
-      }
-    }
+  function handleStart() {
+    // For the Steady Breath pilot this also mounts the embedded Drive player.
     setStatus('running');
   }
-  async function handlePauseResume() {
-    if (status === 'running') {
-      audioRef.current?.pause();
-      setStatus('paused');
-      return;
-    }
-    if (isSteadyBreathPilot && !mediaError) {
-      const audio = audioRef.current;
-      try {
-        await audio?.play();
-      } catch {
-        audio?.pause();
-        setMediaError(true);
-      }
-    }
-    setStatus('running');
+  function handlePauseResume() {
+    setStatus(status === 'running' ? 'paused' : 'running');
   }
   function handleExitConfirmed() {
     // Leaving early never counts as completed: nothing is saved.
-    audioRef.current?.pause();
     setConfirmingExit(false);
     navigate('/recommendation', { state: returnState });
   }
@@ -300,11 +274,6 @@ function GuidedSessionScreen() {
     toast.success('Saved to favorites.');
   }
   function handleRepeat() {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setMediaError(false);
     setStatus('ready');
     setStepIndex(0);
     setSecondsLeft(totalSeconds);
@@ -313,11 +282,10 @@ function GuidedSessionScreen() {
     hasSavedRef.current = false;
   }
   function handleBackToRecommendation() {
-    audioRef.current?.pause();
     navigate('/recommendation', { state: returnState });
   }
 
-  const pilotStartLabel = mediaError ? 'Start session' : status === 'ready' ? 'Start session' : status === 'running' ? 'Pause' : 'Resume';
+  const pilotStartLabel = status === 'ready' ? 'Start session' : status === 'running' ? 'Pause' : 'Resume';
   const pilotStartIcon = status === 'running' ? <Pause size={20} aria-hidden="true" /> : <Play size={20} aria-hidden="true" />;
   function handlePilotPrimaryControl() {
     if (status === 'ready') void handleStart();
@@ -331,12 +299,6 @@ function GuidedSessionScreen() {
           {isSteadyBreathPilot && (
             <>
               <img src={STEADY_BREATH_IMAGE} alt="Still water beneath distant, misty hills in warm, muted light" className="absolute inset-0 h-full w-full object-cover" />
-              <audio
-                ref={audioRef}
-                src={STEADY_BREATH_AUDIO}
-                preload="metadata"
-                onError={() => setMediaError(true)}
-              />
             </>
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-[#14231f]/75 via-[#1b2b27]/35 to-[#14231f]/95" aria-hidden="true" />
@@ -374,7 +336,6 @@ function GuidedSessionScreen() {
             {isSteadyBreathPilot && (
               <div className="mt-8 flex min-h-[104px] flex-col items-center justify-center text-center" aria-live="polite">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#F0D9A7]">{status === 'ready' ? STEADY_BREATH_CUES[0] : status === 'paused' ? 'Paused' : STEADY_BREATH_CUES[Math.min(Math.floor(progressPercent / 12.5) + 1, STEADY_BREATH_CUES.length - 1)]}</p>
-                {mediaError && <p role="alert" className="mt-2 max-w-prose text-sm text-white/90">The guided audio could not be loaded. You can continue with the on-screen practice.</p>}
               </div>
             )}
 
@@ -396,7 +357,17 @@ function GuidedSessionScreen() {
               </div>
             </div>}
 
-            {isSteadyBreathPilot && <div className="my-5 flex justify-center"><div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white backdrop-blur-sm" aria-hidden="true">{mediaError ? <VolumeX className="h-7 w-7" /> : <Volume2 className="h-7 w-7" />}</div></div>}
+            {isSteadyBreathPilot && status !== 'ready' && (
+              <div className="my-5 overflow-hidden rounded-2xl border border-white/25 bg-[#17221F]/70">
+                <iframe
+                  src={STEADY_BREATH_DRIVE_EMBED}
+                  title="Steady Breath guided audio"
+                  allow="autoplay"
+                  className="block h-[200px] w-full border-0"
+                />
+                <p className="px-4 py-3 text-center text-sm text-white/85">If the audio does not start on its own, press play in the player above.</p>
+              </div>
+            )}
 
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/25" aria-label={`Session progress ${progressPercent}%`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
               <div
