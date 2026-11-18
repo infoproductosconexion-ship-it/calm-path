@@ -18,17 +18,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let unsubscribe = () => {};
+    const completeInitialSession = (nextSession: Session | null) => {
+      if (!mounted) return;
+      setSession(nextSession);
+      setLoading(false);
+    };
 
     void supabase.auth.getSession().then(({ data }) => {
-      if (mounted) {
-        setSession(data.session);
-        setLoading(false);
-      }
+      completeInitialSession(data.session);
     }).catch(() => {
-      if (mounted) {
-        setSession(null);
-        setLoading(false);
-      }
+      completeInitialSession(null);
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
