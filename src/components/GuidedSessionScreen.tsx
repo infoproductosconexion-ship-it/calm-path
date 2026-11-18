@@ -30,7 +30,7 @@ const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
 // Pilot audio (narration and music mixed) embedded from Google Drive.
 const STEADY_BREATH_AUDIO_URL = 'https://drive.google.com/file/d/1vX1LIIkqDpw71UAwulmtTFT-NtQczRL7/preview';
-const STEADY_BREATH_IMAGE = 'https://fzfncffjekempswnjilr.supabase.co/storage/v1/object/public/cosmos-code-sites/_assets/c0UjlM82gYhrBezS9bIsNIIRpvr2/5a0cb3d4-49db-4cae-8557-b79a87643495/65779aca53f31a934cebc5c59f9f26a936c200e5d3dc941203195e7e8431c4f6.png';
+const STEADY_BREATH_IMAGE = '/calm-path-misty-water-landscape.svg';
 
 function readJson<T>(key: string, fallback: T): T {
   try {
