@@ -146,7 +146,7 @@ export default function HomeScreen() {
             id="how-it-works-heading"
             className="font-[var(--font-title)] text-2xl font-semibold text-[#F4F6FB]"
           >
-            How it works
+            How to fix it
           </h2>
           <ol className="mt-4 divide-y divide-white/10 border-t border-white/10">
             {STEPS.map((step, index) => (

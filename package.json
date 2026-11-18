@@ -25,7 +25,8 @@
     "@tanstack/react-query": "5.101.4",
     "zustand": "5.0.14",
     "workbox-window": "7.4.1",
-    "@supabase/supabase-js": "2.110.8"
+    "@supabase/supabase-js": "2.110.8",
+    "modern-screenshot": "4.6.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.18",
