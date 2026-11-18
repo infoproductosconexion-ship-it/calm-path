@@ -30,7 +30,7 @@ const SESSIONS_KEY = 'calm-path:completed-sessions';
 const FAVORITES_KEY = 'calm-path:favorites';
 // Pilot audio (narration and music mixed) embedded from Google Drive.
 const STEADY_BREATH_AUDIO_URL = 'https://drive.google.com/file/d/1vX1LIIkqDpw71UAwulmtTFT-NtQczRL7/preview';
-const STEADY_BREATH_IMAGE = 'https://placehold.co/1200x1600/718b83/e9e0c9?text=Calm+water+and+distant+misty+hills';
+const STEADY_BREATH_IMAGE = 'https://fzfncffjekempswnjilr.supabase.co/storage/v1/object/public/cosmos-code-sites/_assets/c0UjlM82gYhrBezS9bIsNIIRpvr2/5a0cb3d4-49db-4cae-8557-b79a87643495/65779aca53f31a934cebc5c59f9f26a936c200e5d3dc941203195e7e8431c4f6.png';
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -368,15 +368,27 @@ function GuidedSessionScreen() {
             </div>}
 
             {isSteadyBreathPilot && (
-              <div className="my-5">
+              <div className="my-5 space-y-3">
+                <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-white/20 shadow-lg sm:aspect-[16/10]">
+                  <img
+                    src={STEADY_BREATH_IMAGE}
+                    alt="A peaceful turquoise shoreline framed by palm leaves, with soft hills in the distance"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#14231f]/65 via-transparent to-[#14231f]/10" aria-hidden="true" />
+                  <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-4 pb-5 text-center text-white">
+                    <span className="text-sm font-medium text-white/90">Time remaining</span>
+                    <span className="mt-1 font-display text-4xl font-semibold tabular-nums drop-shadow-md" aria-live="off">{formatTime(secondsLeft)}</span>
+                  </div>
+                </div>
                 <iframe
                   src={STEADY_BREATH_AUDIO_URL}
                   title="Steady Breath audio player"
                   allow="autoplay"
                   onLoad={handlePilotAudioPlay}
-                  className="h-[200px] w-full rounded-2xl border-0"
+                  className="h-[100px] w-full rounded-2xl border-0"
                 />
-                <p className="mt-2 text-center text-sm text-white/80">Press play on the player to hear the audio.</p>
+                <p className="text-center text-sm text-white/90">Press play on the player to hear the audio.</p>
               </div>
             )}
 
