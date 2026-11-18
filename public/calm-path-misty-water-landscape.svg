@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600" role="img" aria-labelledby="title desc">
+  <title id="title">Quiet water beneath misty hills</title>
+  <desc id="desc">A serene, text-free landscape in soft sage, blue-grey and warm ivory tones.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9c9c1"/>
+      <stop offset=".58" stop-color="#d8d9cb"/>
+      <stop offset="1" stop-color="#e8ddc9"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#879e99"/>
+      <stop offset="1" stop-color="#506e70"/>
+    </linearGradient>
+    <linearGradient id="mist" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f3eee2" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#f3eee2" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#f3eee2" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soften"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="1200" height="1600" fill="url(#sky)"/>
+  <circle cx="890" cy="325" r="126" fill="#f2e7d0" opacity=".48" filter="url(#soften)"/>
+  <path d="M0 690 170 520 310 600 520 365 700 570 850 410 1030 580 1200 450v500H0Z" fill="#82948d" opacity=".58"/>
+  <path d="M0 780 180 625 330 690 540 470 730 680 910 515 1060 665 1200 585v410H0Z" fill="#647c78" opacity=".72"/>
+  <path d="M0 760c190-65 360-55 535-8 190 52 390 36 665-35v250H0Z" fill="url(#mist)" opacity=".83"/>
+  <path d="M0 880c205-46 390-44 600-9 205 35 400 25 600-32v761H0Z" fill="url(#water)"/>
+  <path d="M0 944c210-26 380-22 570 8 202 32 413 16 630-27" fill="none" stroke="#e6e1d3" stroke-width="20" opacity=".22"/>
+  <path d="M112 1038c165-14 265-11 390 7m132 17c175 12 296 7 440-16M65 1170c240-15 376-8 520 12m160 8c122 4 235-4 364-20M192 1324c190-12 337-6 458 10m174 5c118 0 205-6 304-15" fill="none" stroke="#d4d9ce" stroke-width="8" stroke-linecap="round" opacity=".24"/>
+  <path d="M0 1480c234-72 410-58 580-24 209 41 395 35 620-29v173H0Z" fill="#3f5e61" opacity=".34"/>
+</svg>
