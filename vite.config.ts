@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Avoid Fast Refresh instrumentation while the preview runtime is incompatible.
+  // Preview edits require a full reload; production builds are unchanged.
+  server: { hmr: false },
   resolve: { alias: { '@': new URL('./src', import.meta.url).pathname } },
   plugins: [
     react(),
